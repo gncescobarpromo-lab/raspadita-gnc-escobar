@@ -175,7 +175,7 @@ function checkReveal(ctx, canvas) {
   var d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
   var t = 0;
   for (var i = 3; i < d.length; i += 4) if (d[i] < 128) t++;
-  if (t / (canvas.width * canvas.height) > 0.45) {
+  if (t / (canvas.width * canvas.height) > 0.10) {
     revealed = true;
     canvas.style.display = 'none';
     setTimeout(registrar, 500);
