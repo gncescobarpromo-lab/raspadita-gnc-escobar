@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raspadita YPF Infinia - GNC Escobar</title>
+<style>
+  :root { --ypf-blue: #003DA5; --ypf-gold: #C8973A; --light-bg: #f0f4ff; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: var(--light-bg); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+  .header { background: var(--ypf-blue); width: 100%; max-width: 420px; border-radius: 16px 16px 0 0; padding: 18px; text-align: center; }
+  .header h1 { font-size: 1.6rem; color: var(--ypf-gold); letter-spacing: 1px; }
+  .header p { font-size: 0.85rem; color: rgba(255,255,255,0.9); margin-top: 4px; }
+  .card { background: white; width: 100%; max-width: 420px; border-radius: 0 0 16px 16px; box-shadow: 0 8px 30px rgba(0,61,165,0.15); padding: 24px; }
+  .scratch-area { position: relative; width: 100%; height: 180px; border-radius: 12px; overflow: hidden; margin-bottom: 20px; cursor: crosshair; border: 3px solid var(--ypf-gold); }
+  #prize-display { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--ypf-blue); color: white; text-align: center; padding: 16px; z-index: 1; }
+  .prize-name { font-size: 1.3rem; color: var(--ypf-gold); font-weight: bold; }
+  .prize-code { font-size: 0.85rem; margin-top: 6px; opacity: 0.9; }
+  canvas { position: absolute; inset: 0; z-index: 2; touch-action: none; }
+  .hint { text-align: center; font-size: 0.8rem; color: #666; margin-bottom: 16px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 0.82rem; color: #444; font-weight: bold; margin-bottom: 4px; }
+  .form-group input { width: 100%; padding: 10px 14px; border: 2px solid #dde3f5; border-radius: 8px; font-size: 0.95rem; outline: none; }
+  .btn { width: 100%; padding: 14px; background: var(--ypf-gold); color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 8px; }
+  .footer { margin-top: 16px; font-size: 0.72rem; color: #888; text-align: center; }
+  .msg-error { color: #c0392b; font-size: 0.82rem; text-align: center; margin-top: 8px; }
+  #scratch-section { display: none; }
+  #result-section { display: none; text-align: center; padding: 10px 0; }
+  #result-section h2 { color: var(--ypf-blue); font-size: 1.4rem; margin: 10px 0 4px; }
+  .code-box { background: var(--light-bg); border: 2px dashed var(--ypf-gold); border-radius: 10px; padding: 12px; font-size: 1.1rem; font-weight: bold; color: var(--ypf-blue); margin: 12px 0; letter-spacing: 2px; }
+  #result-section p { font-size: 0.85rem; color: #555; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>RASPADITA INFINIA</h1>
+  <p>GNC Escobar - Junio 2026</p>
+</div>
+<div class="card">
+  <div id="form-section">
+    <p style="text-align:center;font-size:0.9rem;color:#333;margin-bottom:16px;">Cargaste combustible Infinia. Completa tus datos y descubri tu premio!</p>
+    <div class="form-group"><label>Nombre *</label><input type="text" id="inp-nombre" placeholder="Tu nombre" maxlength="50"></div>
+    <div class="form-group"><label>Apellido *</label><input type="text" id="inp-apellido" placeholder="Tu apellido" maxlength="50"></div>
+    <div class="form-group"><label>DNI *</label><input type="text" id="inp-dni" placeholder="Sin puntos" maxlength="8"></div>
+    <div class="form-group"><label>Telefono *</label><input type="tel" id="inp-tel" placeholder="Ej: 1134567890" maxlength="15"></div>
+    <button class="btn" onclick="validarYJugar()">JUGAR AHORA!</button>
+    <div id="form-msg"></div>
+  </div>
+  <div id="scratch-section">
+    <p class="hint">Desliza el dedo para raspar y descubrir tu premio</p>
+    <div class="scratch-area">
+      <div id="prize-display">
+        <div class="prize-name" id="pName"></div>
+        <div class="prize-code" id="pCode"></div>
+      </div>
+      <canvas id="scratch-canvas"></canvas>
+    </div>
+  </div>
+  <div id="result-section">
+    <h2 id="res-title"></h2>
+    <div class="code-box" id="res-code"></div>
+    <p id="res-desc"></p>
+  </div>
+  <div class="footer">Promocion valida del 5 al 30 de junio 2026 - Solo con carga de Infinia</div>
+</div>
+<script>
+var VENDEDOR = "RAMIREZ ABRIL";
+var ESTACION = "GNC Escobar";
+var WEBHOOK = "https://script.google.com/macros/s/AKfycbyJkz1pAqaahNgwu-dd0GrghxBQ0IG4LjXzDfSNuCpLd4AnG9oT7cbUiJ5t5clLaOMc/exec";
+var PREMIOS = [
+  {id:"camiseta", nombre:"CAMISETA MESSI", prob:0.05, desc:"Camiseta Adidas Messi Argentina 2022. Retira en la estacion con este codigo."},
+  {id:"cafe", nombre:"CAFE GRATIS", prob:0.30, desc:"Cafe gratis en nuestra tienda. Mostra este codigo al cajero."},
+  {id:"aceite", nombre:"20% OFF ELAION", prob:0.65, desc:"20% de descuento en Elaion Auro 15W-40. Valido en esta visita."}
+];
+var premioSeleccionado = null;
+var datosCliente = {};
+var revealed = false;
+
+function validarYJugar() {
+  var hoy = new Date();
+  var inicio = new Date('2026-06-05');
+  var fin = new Date('2026-06-30T23:59:59');
+  if (hoy < inicio || hoy > fin) {
+    document.getElementById('form-msg').innerHTML = '<p class="msg-error">La promocion no esta activa en esta fecha.</p>';
+    return;
+  }
+  var nombre = document.getElementById('inp-nombre').value.trim();
+  var apellido = document.getElementById('inp-apellido').value.trim();
+  var dni = document.getElementById('inp-dni').value.trim();
+  var tel = document.getElementById('inp-tel').value.trim();
+  if (!nombre || !apellido || !dni || !tel) {
+    document.getElementById('form-msg').innerHTML = '<p class="msg-error">Completa todos los campos.</p>';
+    return;
+  }
+  if (dni.length < 7 || dni.length > 8) {
+    document.getElementById('form-msg').innerHTML = '<p class="msg-error">DNI invalido.</p>';
+    return;
+  }
+  datosCliente = {nombre:nombre, apellido:apellido, dni:dni, tel:tel};
+  premioSeleccionado = sortear();
+  premioSeleccionado.codigo = genCodigo();
+  mostrarRaspadita();
+}
+
+function sortear() {
+  var r = Math.random();
+  var a = 0;
+  for (var i = 0; i < PREMIOS.length; i++) {
+    a += PREMIOS[i].prob;
+    if (r < a) return PREMIOS[i];
+  }
+  return PREMIOS[2];
+}
+
+function genCodigo() {
+  var c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var s = '';
+  for (var i = 0; i < 8; i++) s += c[Math.floor(Math.random() * c.length)];
+  return s;
+}
+
+function mostrarRaspadita() {
+  document.getElementById('form-section').style.display = 'none';
+  document.getElementById('scratch-section').style.display = 'block';
+  document.getElementById('pName').textContent = premioSeleccionado.nombre;
+  document.getElementById('pCode').textContent = 'Codigo: ' + premioSeleccionado.codigo;
+  initScratch();
+}
+
+function initScratch() {
+  var canvas = document.getElementById('scratch-canvas');
+  var area = canvas.parentElement;
+  canvas.width = area.offsetWidth;
+  canvas.height = area.offsetHeight;
+  var ctx = canvas.getContext('2d');
+  var g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  g.addColorStop(0, '#C8973A');
+  g.addColorStop(1, '#a07020');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.font = 'bold 18px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('RASPA AQUI', canvas.width / 2, canvas.height / 2 - 8);
+  ctx.fillText('DESCUBRI TU PREMIO', canvas.width / 2, canvas.height / 2 + 20);
+  ctx.globalCompositeOperation = 'destination-out';
+  var painting = false;
+
+  function getPos(e) {
+    var rect = canvas.getBoundingClientRect();
+    var src = e.touches ? e.touches[0] : e;
+    return {x: src.clientX - rect.left, y: src.clientY - rect.top};
+  }
+
+  function scratch(e) {
+    if (!painting) return;
+    e.preventDefault();
+    var pos = getPos(e);
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 22, 0, Math.PI * 2);
+    ctx.fill();
+    checkReveal(ctx, canvas);
+  }
+
+  canvas.addEventListener('mousedown', function(e) { painting = true; scratch(e); });
+  canvas.addEventListener('mousemove', scratch);
+  canvas.addEventListener('mouseup', function() { painting = false; });
+  canvas.addEventListener('touchstart', function(e) { painting = true; scratch(e); }, {passive: false});
+  canvas.addEventListener('touchmove', scratch, {passive: false});
+  canvas.addEventListener('touchend', function() { painting = false; });
+}
+
+function checkReveal(ctx, canvas) {
+  if (revealed) return;
+  var d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  var t = 0;
+  for (var i = 3; i < d.length; i += 4) if (d[i] < 128) t++;
+  if (t / (canvas.width * canvas.height) > 0.45) {
+    revealed = true;
+    canvas.style.display = 'none';
+    setTimeout(registrar, 500);
+  }
+}
+
+function registrar() {
+  var payload = {
+    nombre: datosCliente.nombre,
+    apellido: datosCliente.apellido,
+    dni: datosCliente.dni,
+    telefono: datosCliente.tel,
+    premio: premioSeleccionado.nombre,
+    codigo: premioSeleccionado.codigo,
+    vendedor: VENDEDOR,
+    estacion: ESTACION
+  };
+  fetch(WEBHOOK, {method: 'POST', body: JSON.stringify(payload)}).catch(function() {});
+  document.getElementById('scratch-section').style.display = 'none';
+  var rs = document.getElementById('result-section');
+  rs.style.display = 'block';
+  document.getElementById('res-title').textContent = 'GANASTE ' + premioSeleccionado.nombre + '!';
+  document.getElementById('res-code').textContent = premioSeleccionado.codigo;
+  document.getElementById('res-desc').textContent = premioSeleccionado.desc;
+}
+</script>
+</body>
+</html>
