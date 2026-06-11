@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Canje - GNC Escobar</title>
+<style>
+  :root { --ypf-blue: #003DA5; --ypf-gold: #C8973A; --light-bg: #f0f4ff; --green: #27ae60; --red: #c0392b; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: var(--light-bg); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+  .header { background: var(--ypf-blue); width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 18px; text-align: center; }
+  .header h1 { font-size: 1.4rem; color: var(--ypf-gold); }
+  .header p { font-size: 0.85rem; color: rgba(255,255,255,0.9); margin-top: 4px; }
+  .card { background: white; width: 100%; max-width: 480px; border-radius: 0 0 16px 16px; box-shadow: 0 8px 30px rgba(0,61,165,0.15); padding: 24px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 0.82rem; color: #444; font-weight: bold; margin-bottom: 4px; }
+  .form-group input { width: 100%; padding: 10px 14px; border: 2px solid #dde3f5; border-radius: 8px; font-size: 1rem; outline: none; text-transform: uppercase; }
+  .form-group input:focus { border-color: var(--ypf-blue); }
+  .btn { width: 100%; padding: 13px; background: var(--ypf-gold); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 8px; }
+  .btn-green { background: var(--green); margin-top: 12px; }
+  .resultado { margin-top: 16px; padding: 16px; border-radius: 10px; text-align: center; display: none; }
+  .resultado.valido { background: #eafaf1; border: 2px solid var(--green); }
+  .resultado.error { background: #fdf0ee; border: 2px solid var(--red); }
+  .resultado.canjeado { background: #fef9e7; border: 2px solid var(--ypf-gold); }
+  .resultado h3 { font-size: 1.1rem; margin-bottom: 8px; }
+  .resultado .premio { font-size: 1.3rem; font-weight: bold; color: var(--ypf-blue); margin: 8px 0; }
+  .resultado .detalle { font-size: 0.85rem; color: #555; }
+  .historial { margin-top: 24px; }
+  .historial h3 { font-size: 1rem; color: var(--ypf-blue); margin-bottom: 10px; border-bottom: 2px solid var(--ypf-gold); padding-bottom: 6px; }
+  .historial-item { padding: 10px; border-radius: 8px; margin-bottom: 8px; background: #f8f9ff; border-left: 4px solid var(--ypf-gold); font-size: 0.85rem; }
+  .historial-item .codigo { font-weight: bold; color: var(--ypf-blue); letter-spacing: 1px; }
+  .historial-item .info { color: #555; margin-top: 2px; }
+  #login-section { display: block; }
+  #main-section { display: none; }
+  .divider { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>PANEL DE CANJE</h1>
+  <p>GNC Escobar - Encargado</p>
+</div>
+<div class="card">
+  <div id="login-section">
+    <p style="text-align:center;font-size:0.9rem;color:#333;margin-bottom:16px;">Ingresa tu contrasena para acceder</p>
+    <div class="form-group">
+      <label>Contrasena</label>
+      <input type="password" id="inp-password" placeholder="***">
+    </div>
+    <button class="btn" onclick="login()">INGRESAR</button>
+    <div id="login-msg" style="color:#c0392b;text-align:center;margin-top:8px;font-size:0.85rem;"></div>
+  </div>
+  <div id="main-section">
+    <div class="form-group">
+      <label>Codigo del premio</label>
+      <input type="text" id="inp-codigo" placeholder="Ej: AB3K7MNP" maxlength="8">
+    </div>
+    <div class="form-group">
+      <label>Nombre del encargado</label>
+      <input type="text" id="inp-encargado" placeholder="Tu nombre">
+    </div>
+    <button class="btn" onclick="verificar()">VERIFICAR CODIGO</button>
+    <div id="resultado" class="resultado">
+      <h3 id="res-titulo"></h3>
+      <div class="premio" id="res-premio"></div>
+      <div class="detalle" id="res-detalle"></div>
+      <button class="btn btn-green" id="btn-canjear" onclick="confirmarCanje()" style="display:none;">CONFIRMAR ENTREGA</button>
+    </div>
+    <hr class="divider">
+    <div class="historial">
+      <h3>Canjes de hoy</h3>
+      <div id="historial-lista">
+        <p style="font-size:0.82rem;color:#aaa;text-align:center;">Aun no hay canjes registrados</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+var WEBHOOK = "https://script.google.com/macros/s/AKfycbzNO9eDuGxFZn-DX6ivFNpg4_g2JaIvWb6PhePSqm9G4ZmGNit72rwQCuh9mDVA6VCQ/exec";
+var PASSWORD = "282";
+var passwordIngresada = '';
+var codigoActual = '';
+var historial = [];
+
+function login() {
+  var pass = document.getElementById('inp-password').value.trim();
+  if (pass === PASSWORD) {
+    passwordIngresada = pass;
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('main-section').style.display = 'block';
+  } else {
+    document.getElementById('login-msg').textContent = 'Contrasena incorrecta.';
+  }
+}
+
+function verificar() {
+  var codigo = document.getElementById('inp-codigo').value.trim().toUpperCase();
+  if (!codigo || codigo.length < 6) {
+    mostrarResultado('error', 'Codigo invalido', '', 'Ingresa un codigo valido.');
+    return;
+  }
+  codigoActual = codigo;
+  var payload = {accion: 'verificar', codigo: codigo, password: passwordIngresada};
+  fetch(WEBHOOK, {method: 'POST', body: JSON.stringify(payload)})
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.status === 'valido') {
+        mostrarResultado('valido', 'Codigo valido', data.premio, 'Vendedor: ' + data.vendedor, true);
+      } else if (data.status === 'ya_canjeado') {
+        mostrarResultado('canjeado', 'Ya canjeado', data.premio, 'Este codigo ya fue canjeado anteriormente.');
+      } else if (data.status === 'no_encontrado') {
+        mostrarResultado('error', 'No encontrado', '', 'El codigo no existe en el sistema.');
+      } else {
+        mostrarResultado('error', 'Error', '', data.message || 'Error desconocido.');
+      }
+    })
+    .catch(function() {
+      mostrarResultado('error', 'Error de conexion', '', 'Verifica tu conexion e intenta de nuevo.');
+    });
+}
+
+function mostrarResultado(tipo, titulo, premio, detalle, mostrarBoton) {
+  var res = document.getElementById('resultado');
+  res.className = 'resultado ' + tipo;
+  res.style.display = 'block';
+  document.getElementById('res-titulo').textContent = titulo;
+  document.getElementById('res-premio').textContent = premio;
+  document.getElementById('res-detalle').textContent = detalle;
+  document.getElementById('btn-canjear').style.display = mostrarBoton ? 'block' : 'none';
+}
+
+function confirmarCanje() {
+  var encargado = document.getElementById('inp-encargado').value.trim();
+  if (!encargado) { alert('Ingresa tu nombre antes de confirmar.'); return; }
+  var payload = {accion: 'canjear', codigo: codigoActual, password: passwordIngresada, entregado_por: encargado};
+  fetch(WEBHOOK, {method: 'POST', body: JSON.stringify(payload)})
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.status === 'canjeado') {
+        var premio = document.getElementById('res-premio').textContent;
+        mostrarResultado('valido', 'Entrega confirmada!', premio, 'Registrado por: ' + encargado);
+        document.getElementById('btn-canjear').style.display = 'none';
+        document.getElementById('inp-codigo').value = '';
+        agregarHistorial(codigoActual, premio, encargado);
+      } else if (data.status === 'ya_canjeado') {
+        mostrarResultado('canjeado', 'Ya canjeado', '', 'Este codigo ya fue canjeado anteriormente.');
+      } else {
+        mostrarResultado('error', 'Error', '', 'No se pudo registrar el canje.');
+      }
+    })
+    .catch(function() {
+      mostrarResultado('error', 'Error de conexion', '', 'Verifica tu conexion e intenta de nuevo.');
+    });
+}
+
+function agregarHistorial(codigo, premio, encargado) {
+  var ahora = new Date();
+  var hora = ahora.getHours().toString().padStart(2,'0') + ':' + ahora.getMinutes().toString().padStart(2,'0');
+  historial.unshift({codigo: codigo, premio: premio, encargado: encargado, hora: hora});
+  var lista = document.getElementById('historial-lista');
+  lista.innerHTML = '';
+  historial.forEach(function(item) {
+    var div = document.createElement('div');
+    div.className = 'historial-item';
+    div.innerHTML = '<div class="codigo">' + item.codigo + ' - ' + item.premio + '</div><div class="info">' + item.hora + ' | Entregado por: ' + item.encargado + '</div>';
+    lista.appendChild(div);
+  });
+}
+</script>
+</body>
+</html>
