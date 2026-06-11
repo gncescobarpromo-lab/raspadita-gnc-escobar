@@ -149,13 +149,28 @@ function registrar() {
     vendedor: VENDEDOR,
     estacion: ESTACION
   };
-  fetch(WEBHOOK, {method: 'POST', body: JSON.stringify(payload)}).catch(function() {});
-  document.getElementById('scratch-section').style.display = 'none';
-  var rs = document.getElementById('result-section');
-  rs.style.display = 'block';
-  document.getElementById('res-title').textContent = 'GANASTE ' + premioSeleccionado.nombre + '!';
-  document.getElementById('res-code').textContent = premioSeleccionado.codigo;
-  document.getElementById('res-desc').textContent = premioSeleccionado.desc;
+  fetch(WEBHOOK, {method: 'POST', body: JSON.stringify(payload)})
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var premiofinal = data.premio || premioSeleccionado.nombre;
+      var desc = premiofinal === 'CAMISETA MESSI' ? 'Camiseta Adidas Messi Argentina 2022. Retira en la estacion con este codigo.' :
+                 premiofinal === 'CAFE GRATIS' ? 'Cafe gratis en nuestra tienda. Mostra este codigo al cajero.' :
+                 '20% de descuento en Elaion Auro 15W-40. Valido en esta visita.';
+      document.getElementById('scratch-section').style.display = 'none';
+      var rs = document.getElementById('result-section');
+      rs.style.display = 'block';
+      document.getElementById('res-title').textContent = 'GANASTE ' + premiofinal + '!';
+      document.getElementById('res-code').textContent = premioSeleccionado.codigo;
+      document.getElementById('res-desc').textContent = desc;
+    })
+    .catch(function() {
+      document.getElementById('scratch-section').style.display = 'none';
+      var rs = document.getElementById('result-section');
+      rs.style.display = 'block';
+      document.getElementById('res-title').textContent = 'GANASTE ' + premioSeleccionado.nombre + '!';
+      document.getElementById('res-code').textContent = premioSeleccionado.codigo;
+      document.getElementById('res-desc').textContent = premioSeleccionado.desc;
+    });
 }
 </script>
 </body>
