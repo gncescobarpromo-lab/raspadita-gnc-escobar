@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking Vendedores - GNC Escobar</title>
+<style>
+  :root { --ypf-blue: #003DA5; --ypf-gold: #C8973A; --light-bg: #f0f4ff; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: var(--light-bg); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+  .header { background: var(--ypf-blue); width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 18px; text-align: center; }
+  .header h1 { font-size: 1.4rem; color: var(--ypf-gold); }
+  .header p { font-size: 0.85rem; color: rgba(255,255,255,0.9); margin-top: 4px; }
+  .card { background: white; width: 100%; max-width: 480px; border-radius: 0 0 16px 16px; box-shadow: 0 8px 30px rgba(0,61,165,0.15); padding: 24px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 0.82rem; color: #444; font-weight: bold; margin-bottom: 4px; }
+  .form-group input { width: 100%; padding: 10px 14px; border: 2px solid #dde3f5; border-radius: 8px; font-size: 1rem; outline: none; }
+  .btn { width: 100%; padding: 13px; background: var(--ypf-gold); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 8px; }
+  .btn-blue { background: var(--ypf-blue); margin-top: 12px; }
+  .btn-green { background: #27ae60; margin-top: 12px; }
+  .filtros { display: flex; gap: 8px; margin-bottom: 16px; }
+  .filtro-btn { flex: 1; padding: 8px; border: 2px solid #dde3f5; border-radius: 8px; background: white; font-size: 0.82rem; font-weight: bold; cursor: pointer; color: #444; }
+  .filtro-btn.activo { background: var(--ypf-blue); color: white; border-color: var(--ypf-blue); }
+  .ranking-title { font-size: 1rem; color: var(--ypf-blue); font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid var(--ypf-gold); padding-bottom: 6px; }
+  .ranking-item { display: flex; align-items: center; padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; background: #f8f9ff; }
+  .ranking-item.top1 { background: #fff8e6; border-left: 4px solid gold; }
+  .ranking-item.top2 { background: #f5f5f5; border-left: 4px solid silver; }
+  .ranking-item.top3 { background: #fff3ee; border-left: 4px solid #cd7f32; }
+  .ranking-item .pos { font-size: 1.2rem; font-weight: bold; width: 32px; color: var(--ypf-blue); }
+  .ranking-item .nombre { flex: 1; font-size: 0.9rem; font-weight: bold; color: #333; }
+  .ranking-item .cantidad { font-size: 1.1rem; font-weight: bold; color: var(--ypf-gold); }
+  .ranking-item .barra-cont { flex: 1; margin: 0 10px; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+  .ranking-item .barra { height: 100%; background: var(--ypf-gold); border-radius: 4px; }
+  .ultima-act { font-size: 0.75rem; color: #aaa; text-align: center; margin-top: 12px; }
+  #login-section { display: block; }
+  #main-section { display: none; }
+  .loading { text-align: center; color: #aaa; font-size: 0.9rem; padding: 20px; }
+  #ranking-exportable { background: white; padding: 16px; border-radius: 12px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>RANKING VENDEDORES</h1>
+  <p>GNC Escobar - Raspadita Infinia 2026</p>
+</div>
+<div class="card">
+  <div id="login-section">
+    <p style="text-align:center;font-size:0.9rem;color:#333;margin-bottom:16px;">Ingresa tu contrasena para acceder</p>
+    <div class="form-group">
+      <label>Contrasena</label>
+      <input type="password" id="inp-password" placeholder="***">
+    </div>
+    <button class="btn" onclick="login()">INGRESAR</button>
+    <div id="login-msg" style="color:#c0392b;text-align:center;margin-top:8px;font-size:0.85rem;"></div>
+  </div>
+
+  <div id="main-section">
+    <div class="filtros">
+      <button class="filtro-btn activo" id="btn-hoy" onclick="setFiltro('hoy')">HOY</button>
+      <button class="filtro-btn" id="btn-semana" onclick="setFiltro('semana')">SEMANA</button>
+      <button class="filtro-btn" id="btn-total" onclick="setFiltro('total')">TOTAL</button>
+    </div>
+
+    <div id="ranking-exportable">
+      <div class="ranking-title" id="ranking-titulo">Ranking de hoy</div>
+      <div id="ranking-lista"><div class="loading">Cargando datos...</div></div>
+    </div>
+
+    <div class="ultima-act" id="ultima-act"></div>
+    <button class="btn btn-blue" onclick="cargarRanking()">ACTUALIZAR</button>
+    <button class="btn btn-green" onclick="descargarImagen()">DESCARGAR PARA WHATSAPP</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+var WEBHOOK = "https://script.google.com/macros/s/AKfycbzNO9eDuGxFZn-DX6ivFNpg4_g2JaIvWb6PhePSqm9G4ZmGNit72rwQCuh9mDVA6VCQ/exec";
+var PASSWORD = "282";
+var filtroActual = 'hoy';
+var todosLosDatos = [];
+
+function login() {
+  var pass = document.getElementById('inp-password').value.trim();
+  if (pass === PASSWORD) {
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('main-section').style.display = 'block';
+    cargarRanking();
+  } else {
+    document.getElementById('login-msg').textContent = 'Contrasena incorrecta.';
+  }
+}
+
+document.getElementById('inp-password').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') login();
+});
+
+function setFiltro(f) {
+  filtroActual = f;
+  document.querySelectorAll('.filtro-btn').forEach(function(b) { b.classList.remove('activo'); });
+  document.getElementById('btn-' + f).classList.add('activo');
+  var titulos = {hoy: 'Ranking de hoy', semana: 'Ranking de la semana', total: 'Ranking total de la promocion'};
+  document.getElementById('ranking-titulo').textContent = titulos[f];
+  renderRanking();
+}
+
+function cargarRanking() {
+  document.getElementById('ranking-lista').innerHTML = '<div class="loading">Cargando datos...</div>';
+  fetch(WEBHOOK, {
+    method: 'POST',
+    body: JSON.stringify({accion: 'ranking', password: PASSWORD})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.status === 'ok') {
+      todosLosDatos = data.registros;
+      renderRanking();
+      document.getElementById('ultima-act').textContent = 'Ultima actualizacion: ' + new Date().toLocaleTimeString('es-AR');
+    } else {
+      document.getElementById('ranking-lista').innerHTML = '<div class="loading">Error al cargar datos.</div>';
+    }
+  })
+  .catch(function() {
+    document.getElementById('ranking-lista').innerHTML = '<div class="loading">Error de conexion.</div>';
+  });
+}
+
+function renderRanking() {
+  var hoy = new Date();
+  var hoyStr = hoy.toISOString().split('T')[0];
+  var inicioSemana = new Date(hoy);
+  inicioSemana.setDate(hoy.getDate() - hoy.getDay() + 1);
+  var inicioSemanaStr = inicioSemana.toISOString().split('T')[0];
+
+  var filtrados = todosLosDatos.filter(function(r) {
+    if (filtroActual === 'hoy') return r.fecha.startsWith(hoyStr);
+    if (filtroActual === 'semana') return r.fecha >= inicioSemanaStr;
+    return true;
+  });
+
+  var conteo = {};
+  filtrados.forEach(function(r) {
+    conteo[r.vendedor] = (conteo[r.vendedor] || 0) + 1;
+  });
+
+  var lista = Object.keys(conteo).map(function(v) {
+    return {vendedor: v, cantidad: conteo[v]};
+  }).sort(function(a, b) { return b.cantidad - a.cantidad; });
+
+  if (lista.length === 0) {
+    document.getElementById('ranking-lista').innerHTML = '<div class="loading">Sin datos para este periodo.</div>';
+    return;
+  }
+
+  var max = lista[0].cantidad;
+  var html = '';
+  lista.forEach(function(item, i) {
+    var clase = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
+    var medalla = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.';
+    var pct = Math.round((item.cantidad / max) * 100);
+    html += '<div class="ranking-item ' + clase + '">';
+    html += '<div class="pos">' + medalla + '</div>';
+    html += '<div class="nombre">' + item.vendedor + '</div>';
+    html += '<div class="barra-cont"><div class="barra" style="width:' + pct + '%"></div></div>';
+    html += '<div class="cantidad">' + item.cantidad + '</div>';
+    html += '</div>';
+  });
+
+  document.getElementById('ranking-lista').innerHTML = html;
+}
+
+function descargarImagen() {
+  var el = document.getElementById('ranking-exportable');
+  html2canvas(el, {backgroundColor: '#ffffff', scale: 2}).then(function(canvas) {
+    var link = document.createElement('a');
+    link.download = 'ranking_GNC_Escobar_' + new Date().toLocaleDateString('es-AR').replace(/\//g, '-') + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+}
+</script>
+</body>
+</html>
