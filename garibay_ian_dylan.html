@@ -15,7 +15,6 @@
   .scratch-area { position: relative; width: 100%; height: 200px; border-radius: 12px; overflow: hidden; margin-bottom: 20px; cursor: crosshair; border: 3px solid var(--ypf-gold); }
   #prize-display { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--ypf-blue); color: white; text-align: center; padding: 16px; z-index: 1; }
   .prize-name { font-size: 1.3rem; color: var(--ypf-gold); font-weight: bold; }
-  .prize-code { font-size: 0.85rem; margin-top: 6px; opacity: 0.9; }
   canvas { position: absolute; inset: 0; z-index: 2; touch-action: none; }
   .hint { text-align: center; font-size: 0.85rem; color: #555; margin-bottom: 16px; font-weight: bold; }
   .footer { margin-top: 16px; font-size: 0.72rem; color: #888; text-align: center; }
@@ -40,63 +39,50 @@
   <p>GNC Escobar - Junio 2026</p>
 </div>
 <div class="card">
-
-  <!-- BLOQUEADO -->
   <div id="bloqueado-section" style="display:none;">
     <div class="bloqueado">
       <h3>Ya participaste hoy</h3>
-      <p>Cada cliente puede jugar una vez por dia. Volvé mañana para una nueva oportunidad.</p>
+      <p>Cada cliente puede jugar una vez por dia. Volvé manana para una nueva oportunidad.</p>
     </div>
   </div>
-
-  <!-- RASPADITA -->
   <div id="scratch-section">
     <p class="hint">Desliza el dedo para raspar y descubrir tu premio</p>
     <div class="scratch-area">
       <div id="prize-display">
         <div class="prize-name" id="pName">RASPA PARA DESCUBRIR</div>
-        <div class="prize-code" id="pCode"></div>
       </div>
       <canvas id="scratch-canvas"></canvas>
     </div>
   </div>
-
-  <!-- CARGANDO -->
   <div id="loading-section" style="display:none;">
     <div class="loading-section">
       <div class="spinner"></div>
       <p>Verificando tu premio...</p>
     </div>
   </div>
-
-  <!-- RESULTADO -->
   <div id="result-section">
     <h2 id="res-title"></h2>
     <div class="code-box" id="res-code"></div>
     <p id="res-desc"></p>
     <div id="aviso-camiseta" class="aviso-camiseta" style="display:none;">
-      ⚠️ IMPORTANTE: Si te retiras de la estacion sin canjear este premio, lo perderas.
+      IMPORTANTE: Si te retiras de la estacion sin canjear este premio, lo perderas.
     </div>
   </div>
-
   <div class="footer">Promocion valida del 5 al 30 de junio 2026 - Solo con carga de Infinia</div>
 </div>
-
 <script>
 var VENDEDOR = "GARIBAY IAN DYLAN";
 var ESTACION = "GNC Escobar";
 var WEBHOOK = "https://script.google.com/macros/s/AKfycbzNO9eDuGxFZn-DX6ivFNpg4_g2JaIvWb6PhePSqm9G4ZmGNit72rwQCuh9mDVA6VCQ/exec";
 var PREMIOS = [
-  {id:"camiseta", nombre:"CAMISETA MESSI", prob:0.05, desc:"Camiseta Adidas Messi Argentina 2022. Retira en la estacion con este codigo."},
-  {id:"cafe", nombre:"CAFE GRATIS", prob:0.30, desc:"Cafe gratis en nuestra tienda. Mostra este codigo al cajero."},
-  {id:"aceite", nombre:"20% OFF ELAION", prob:0.65, desc:"20% de descuento en Elaion Auro 15W-40. Valido en esta visita."}
+  {id:"camiseta", nombre:"CAMISETA MESSI", prob:0.05},
+  {id:"cafe", nombre:"CAFE GRATIS", prob:0.30},
+  {id:"aceite", nombre:"20% OFF ELAION", prob:0.65}
 ];
 var revealed = false;
 var premioSorteado = null;
 var codigoGenerado = null;
-
-// Control bloqueo diario
-var STORAGE_KEY = 'raspadita_GARIBAY_IAN_DYLAN_jugado';
+var STORAGE_KEY = 'raspadita_gnc_GARIBAY_IAN_DYLAN_jugado';
 var hoyStr = new Date().toISOString().split('T')[0];
 var ultimaJugada = localStorage.getItem(STORAGE_KEY);
 
@@ -106,23 +92,17 @@ if (ultimaJugada === hoyStr) {
   document.getElementById('scratch-section').style.display = 'block';
   premioSorteado = sortear();
   codigoGenerado = genCodigo();
-  document.getElementById('pName').textContent = 'RASPA PARA DESCUBRIR';
   initScratch();
 }
 
 function sortear() {
-  var r = Math.random();
-  var a = 0;
-  for (var i = 0; i < PREMIOS.length; i++) {
-    a += PREMIOS[i].prob;
-    if (r < a) return PREMIOS[i];
-  }
+  var r = Math.random(); var a = 0;
+  for (var i = 0; i < PREMIOS.length; i++) { a += PREMIOS[i].prob; if (r < a) return PREMIOS[i]; }
   return PREMIOS[2];
 }
 
 function genCodigo() {
-  var c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  var s = '';
+  var c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; var s = '';
   for (var i = 0; i < 8; i++) s += c[Math.floor(Math.random() * c.length)];
   return s;
 }
@@ -130,95 +110,52 @@ function genCodigo() {
 function initScratch() {
   var canvas = document.getElementById('scratch-canvas');
   var area = canvas.parentElement;
-  canvas.width = area.offsetWidth;
-  canvas.height = area.offsetHeight;
+  canvas.width = area.offsetWidth; canvas.height = area.offsetHeight;
   var ctx = canvas.getContext('2d');
   var g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  g.addColorStop(0, '#C8973A');
-  g.addColorStop(1, '#a07020');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'rgba(255,255,255,0.25)';
-  ctx.font = 'bold 18px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('RASPA AQUI', canvas.width / 2, canvas.height / 2 - 8);
-  ctx.fillText('DESCUBRI TU PREMIO', canvas.width / 2, canvas.height / 2 + 20);
+  g.addColorStop(0, '#C8973A'); g.addColorStop(1, '#a07020');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.font = 'bold 18px Arial'; ctx.textAlign = 'center';
+  ctx.fillText('RASPA AQUI', canvas.width/2, canvas.height/2-8);
+  ctx.fillText('DESCUBRI TU PREMIO', canvas.width/2, canvas.height/2+20);
   ctx.globalCompositeOperation = 'destination-out';
   var painting = false;
-
-  function getPos(e) {
-    var rect = canvas.getBoundingClientRect();
-    var src = e.touches ? e.touches[0] : e;
-    return {x: src.clientX - rect.left, y: src.clientY - rect.top};
-  }
-
-  function scratch(e) {
-    if (!painting) return;
-    e.preventDefault();
-    var pos = getPos(e);
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 22, 0, Math.PI * 2);
-    ctx.fill();
-    checkReveal(ctx, canvas);
-  }
-
-  canvas.addEventListener('mousedown', function(e) { painting = true; scratch(e); });
-  canvas.addEventListener('mousemove', scratch);
-  canvas.addEventListener('mouseup', function() { painting = false; });
-  canvas.addEventListener('touchstart', function(e) { painting = true; scratch(e); }, {passive: false});
-  canvas.addEventListener('touchmove', scratch, {passive: false});
-  canvas.addEventListener('touchend', function() { painting = false; });
+  function getPos(e) { var rect = canvas.getBoundingClientRect(); var src = e.touches?e.touches[0]:e; return {x:src.clientX-rect.left,y:src.clientY-rect.top}; }
+  function scratch(e) { if(!painting)return; e.preventDefault(); var pos=getPos(e); ctx.beginPath(); ctx.arc(pos.x,pos.y,22,0,Math.PI*2); ctx.fill(); checkReveal(ctx,canvas); }
+  canvas.addEventListener('mousedown',function(e){painting=true;scratch(e);});
+  canvas.addEventListener('mousemove',scratch);
+  canvas.addEventListener('mouseup',function(){painting=false;});
+  canvas.addEventListener('touchstart',function(e){painting=true;scratch(e);},{passive:false});
+  canvas.addEventListener('touchmove',scratch,{passive:false});
+  canvas.addEventListener('touchend',function(){painting=false;});
 }
 
 function checkReveal(ctx, canvas) {
-  if (revealed) return;
-  var d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-  var t = 0;
-  for (var i = 3; i < d.length; i += 4) if (d[i] < 128) t++;
-  if (t / (canvas.width * canvas.height) > 0.10) {
-    revealed = true;
-    canvas.style.display = 'none';
-    enviarAlServidor();
-  }
+  if(revealed)return;
+  var d=ctx.getImageData(0,0,canvas.width,canvas.height).data; var t=0;
+  for(var i=3;i<d.length;i+=4) if(d[i]<128)t++;
+  if(t/(canvas.width*canvas.height)>0.10){revealed=true;canvas.style.display='none';enviarAlServidor();}
 }
 
 function enviarAlServidor() {
-  document.getElementById('scratch-section').style.display = 'none';
-  document.getElementById('loading-section').style.display = 'block';
-
-  var payload = {
-    accion: 'sortear',
-    premio: premioSorteado.nombre,
-    codigo: codigoGenerado,
-    vendedor: VENDEDOR,
-    estacion: ESTACION
-  };
-
-  fetch(WEBHOOK, {method: 'POST', body: JSON.stringify(payload)})
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      localStorage.setItem(STORAGE_KEY, hoyStr);
-      mostrarResultado(data.premio || premioSorteado.nombre);
-    })
-    .catch(function() {
-      localStorage.setItem(STORAGE_KEY, hoyStr);
-      mostrarResultado(premioSorteado.nombre);
-    });
+  document.getElementById('scratch-section').style.display='none';
+  document.getElementById('loading-section').style.display='block';
+  fetch(WEBHOOK,{method:'POST',body:JSON.stringify({accion:'sortear',premio:premioSorteado.nombre,codigo:codigoGenerado,vendedor:VENDEDOR,estacion:ESTACION})})
+    .then(function(r){return r.json();})
+    .then(function(data){localStorage.setItem(STORAGE_KEY,hoyStr);mostrarResultado(data.premio||premioSorteado.nombre);})
+    .catch(function(){localStorage.setItem(STORAGE_KEY,hoyStr);mostrarResultado(premioSorteado.nombre);});
 }
 
 function mostrarResultado(premioFinal) {
-  document.getElementById('loading-section').style.display = 'none';
-  var rs = document.getElementById('result-section');
-  rs.style.display = 'block';
-  document.getElementById('res-title').textContent = 'GANASTE ' + premioFinal + '!';
-  document.getElementById('res-code').textContent = codigoGenerado;
-  var desc = premioFinal === 'CAMISETA MESSI' ? 'Camiseta Adidas Messi Argentina 2022. Retira en la estacion con este codigo.' :
-             premioFinal === 'CAFE GRATIS' ? 'Cafe gratis en nuestra tienda. Mostra este codigo al cajero.' :
-             '20% de descuento en Elaion Auro 15W-40. Valido en esta visita.';
-  document.getElementById('res-desc').textContent = desc;
-  if (premioFinal === 'CAMISETA MESSI') {
-    document.getElementById('aviso-camiseta').style.display = 'block';
-  }
+  document.getElementById('loading-section').style.display='none';
+  var rs=document.getElementById('result-section'); rs.style.display='block';
+  document.getElementById('res-title').textContent='GANASTE '+premioFinal+'!';
+  document.getElementById('res-code').textContent=codigoGenerado;
+  var desc=premioFinal==='CAMISETA MESSI'?'Camiseta Adidas Messi Argentina 2022. Retira en la estacion con este codigo.':
+           premioFinal==='CAFE GRATIS'?'Cafe gratis en nuestra tienda. Mostra este codigo al cajero.':
+           '20% de descuento en Elaion Auro 15W-40. Valido en esta visita.';
+  document.getElementById('res-desc').textContent=desc;
+  if(premioFinal==='CAMISETA MESSI') document.getElementById('aviso-camiseta').style.display='block';
 }
 </script>
 </body>

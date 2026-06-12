@@ -18,9 +18,11 @@
   .btn { width: 100%; padding: 13px; background: var(--ypf-gold); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 8px; }
   .btn-blue { background: var(--ypf-blue); margin-top: 12px; }
   .btn-green { background: #27ae60; margin-top: 12px; }
-  .filtros { display: flex; gap: 8px; margin-bottom: 16px; }
-  .filtro-btn { flex: 1; padding: 8px; border: 2px solid #dde3f5; border-radius: 8px; background: white; font-size: 0.82rem; font-weight: bold; cursor: pointer; color: #444; }
+  .filtros { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .filtro-btn { flex: 1; min-width: 70px; padding: 8px; border: 2px solid #dde3f5; border-radius: 8px; background: white; font-size: 0.82rem; font-weight: bold; cursor: pointer; color: #444; }
   .filtro-btn.activo { background: var(--ypf-blue); color: white; border-color: var(--ypf-blue); }
+  .fecha-picker { display: none; margin-bottom: 12px; }
+  .fecha-picker input[type=date] { width: 100%; padding: 8px 12px; border: 2px solid #dde3f5; border-radius: 8px; font-size: 0.9rem; outline: none; }
   .ranking-title { font-size: 1rem; color: var(--ypf-blue); font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid var(--ypf-gold); padding-bottom: 6px; }
   .ranking-item { display: flex; align-items: center; padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; background: #f8f9ff; }
   .ranking-item.top1 { background: #fff8e6; border-left: 4px solid gold; }
@@ -36,6 +38,9 @@
   #main-section { display: none; }
   .loading { text-align: center; color: #aaa; font-size: 0.9rem; padding: 20px; }
   #ranking-exportable { background: white; padding: 16px; border-radius: 12px; }
+  .export-header { text-align: center; margin-bottom: 12px; display: none; }
+  .export-header h2 { color: var(--ypf-blue); font-size: 1.1rem; }
+  .export-header p { font-size: 0.8rem; color: #666; }
 </style>
 </head>
 <body>
@@ -53,29 +58,33 @@
     <button class="btn" onclick="login()">INGRESAR</button>
     <div id="login-msg" style="color:#c0392b;text-align:center;margin-top:8px;font-size:0.85rem;"></div>
   </div>
-
   <div id="main-section">
     <div class="filtros">
       <button class="filtro-btn activo" id="btn-hoy" onclick="setFiltro('hoy')">HOY</button>
       <button class="filtro-btn" id="btn-semana" onclick="setFiltro('semana')">SEMANA</button>
       <button class="filtro-btn" id="btn-total" onclick="setFiltro('total')">TOTAL</button>
+      <button class="filtro-btn" id="btn-dia" onclick="setFiltro('dia')">POR DIA</button>
     </div>
-
+    <div class="fecha-picker" id="fecha-picker">
+      <input type="date" id="inp-fecha" onchange="renderRanking()">
+    </div>
     <div id="ranking-exportable">
+      <div class="export-header" id="export-header">
+        <h2>Ranking GNC Escobar</h2>
+        <p id="export-subtitulo"></p>
+      </div>
       <div class="ranking-title" id="ranking-titulo">Ranking de hoy</div>
       <div id="ranking-lista"><div class="loading">Cargando datos...</div></div>
     </div>
-
     <div class="ultima-act" id="ultima-act"></div>
     <button class="btn btn-blue" onclick="cargarRanking()">ACTUALIZAR</button>
     <button class="btn btn-green" onclick="descargarImagen()">DESCARGAR PARA WHATSAPP</button>
   </div>
 </div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 var WEBHOOK = "https://script.google.com/macros/s/AKfycbzNO9eDuGxFZn-DX6ivFNpg4_g2JaIvWb6PhePSqm9G4ZmGNit72rwQCuh9mDVA6VCQ/exec";
-var PASSWORD = "282";
+var PASSWORD = '282';
 var filtroActual = 'hoy';
 var todosLosDatos = [];
 
@@ -90,61 +99,52 @@ function login() {
   }
 }
 
-document.getElementById('inp-password').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') login();
-});
+document.getElementById('inp-password').addEventListener('keydown', function(e) { if(e.key==='Enter') login(); });
 
 function setFiltro(f) {
   filtroActual = f;
   document.querySelectorAll('.filtro-btn').forEach(function(b) { b.classList.remove('activo'); });
   document.getElementById('btn-' + f).classList.add('activo');
-  var titulos = {hoy: 'Ranking de hoy', semana: 'Ranking de la semana', total: 'Ranking total de la promocion'};
+  var titulos = {hoy:'Ranking de hoy', semana:'Ranking de la semana', total:'Ranking total de la promocion', dia:'Ranking por dia'};
   document.getElementById('ranking-titulo').textContent = titulos[f];
+  document.getElementById('fecha-picker').style.display = f === 'dia' ? 'block' : 'none';
   renderRanking();
 }
 
 function cargarRanking() {
   document.getElementById('ranking-lista').innerHTML = '<div class="loading">Cargando datos...</div>';
-  fetch(WEBHOOK, {
-    method: 'POST',
-    body: JSON.stringify({accion: 'ranking', password: PASSWORD})
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.status === 'ok') {
-      todosLosDatos = data.registros;
-      renderRanking();
-      document.getElementById('ultima-act').textContent = 'Ultima actualizacion: ' + new Date().toLocaleTimeString('es-AR');
-    } else {
-      document.getElementById('ranking-lista').innerHTML = '<div class="loading">Error al cargar datos.</div>';
-    }
-  })
-  .catch(function() {
-    document.getElementById('ranking-lista').innerHTML = '<div class="loading">Error de conexion.</div>';
-  });
+  fetch(WEBHOOK, {method:'POST', body:JSON.stringify({accion:'ranking', password:PASSWORD})})
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.status === 'ok') {
+        todosLosDatos = data.registros;
+        renderRanking();
+        document.getElementById('ultima-act').textContent = 'Ultima actualizacion: ' + new Date().toLocaleTimeString('es-AR');
+      } else {
+        document.getElementById('ranking-lista').innerHTML = '<div class="loading">Error al cargar datos.</div>';
+      }
+    })
+    .catch(function() { document.getElementById('ranking-lista').innerHTML = '<div class="loading">Error de conexion.</div>'; });
 }
 
 function renderRanking() {
   var hoy = new Date();
   var hoyStr = hoy.toISOString().split('T')[0];
   var inicioSemana = new Date(hoy);
-  inicioSemana.setDate(hoy.getDate() - hoy.getDay() + 1);
+  inicioSemana.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
   var inicioSemanaStr = inicioSemana.toISOString().split('T')[0];
+  var diaEspecifico = document.getElementById('inp-fecha').value;
 
   var filtrados = todosLosDatos.filter(function(r) {
-    if (filtroActual === 'hoy') return r.fecha.startsWith(hoyStr);
+    if (filtroActual === 'hoy') return r.fecha === hoyStr;
     if (filtroActual === 'semana') return r.fecha >= inicioSemanaStr;
+    if (filtroActual === 'dia') return diaEspecifico ? r.fecha === diaEspecifico : false;
     return true;
   });
 
   var conteo = {};
-  filtrados.forEach(function(r) {
-    conteo[r.vendedor] = (conteo[r.vendedor] || 0) + 1;
-  });
-
-  var lista = Object.keys(conteo).map(function(v) {
-    return {vendedor: v, cantidad: conteo[v]};
-  }).sort(function(a, b) { return b.cantidad - a.cantidad; });
+  filtrados.forEach(function(r) { conteo[r.vendedor] = (conteo[r.vendedor] || 0) + 1; });
+  var lista = Object.keys(conteo).map(function(v) { return {vendedor:v, cantidad:conteo[v]}; }).sort(function(a,b) { return b.cantidad-a.cantidad; });
 
   if (lista.length === 0) {
     document.getElementById('ranking-lista').innerHTML = '<div class="loading">Sin datos para este periodo.</div>';
@@ -154,25 +154,28 @@ function renderRanking() {
   var max = lista[0].cantidad;
   var html = '';
   lista.forEach(function(item, i) {
-    var clase = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
-    var medalla = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) + '.';
-    var pct = Math.round((item.cantidad / max) * 100);
-    html += '<div class="ranking-item ' + clase + '">';
-    html += '<div class="pos">' + medalla + '</div>';
-    html += '<div class="nombre">' + item.vendedor + '</div>';
-    html += '<div class="barra-cont"><div class="barra" style="width:' + pct + '%"></div></div>';
-    html += '<div class="cantidad">' + item.cantidad + '</div>';
+    var clase = i===0?'top1':i===1?'top2':i===2?'top3':'';
+    var medalla = i===0?'1':i===1?'2':i===2?'3':(i+1)+'.';
+    var pct = Math.round((item.cantidad/max)*100);
+    html += '<div class="ranking-item '+clase+'">';
+    html += '<div class="pos">'+medalla+'</div>';
+    html += '<div class="nombre">'+item.vendedor+'</div>';
+    html += '<div class="barra-cont"><div class="barra" style="width:'+pct+'%"></div></div>';
+    html += '<div class="cantidad">'+item.cantidad+'</div>';
     html += '</div>';
   });
-
   document.getElementById('ranking-lista').innerHTML = html;
 }
 
 function descargarImagen() {
+  var subtitulos = {hoy:'Hoy - '+new Date().toLocaleDateString('es-AR'), semana:'Esta semana', total:'Total promocion', dia:document.getElementById('inp-fecha').value || 'Dia seleccionado'};
+  document.getElementById('export-header').style.display = 'block';
+  document.getElementById('export-subtitulo').textContent = subtitulos[filtroActual];
   var el = document.getElementById('ranking-exportable');
-  html2canvas(el, {backgroundColor: '#ffffff', scale: 2}).then(function(canvas) {
+  html2canvas(el, {backgroundColor:'#ffffff', scale:2}).then(function(canvas) {
+    document.getElementById('export-header').style.display = 'none';
     var link = document.createElement('a');
-    link.download = 'ranking_GNC_Escobar_' + new Date().toLocaleDateString('es-AR').replace(/\//g, '-') + '.png';
+    link.download = 'ranking_gnc_escobar_' + new Date().toLocaleDateString('es-AR').replace(/\//g,'-') + '.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
   });
