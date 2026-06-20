@@ -24,6 +24,7 @@
   .code-box { background: var(--light-bg); border: 2px dashed var(--ypf-gold); border-radius: 10px; padding: 12px; font-size: 1.1rem; font-weight: bold; color: var(--ypf-blue); margin: 12px 0; letter-spacing: 2px; }
   #result-section p { font-size: 0.85rem; color: #555; }
   .aviso-camiseta { background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px; padding: 12px; margin-top: 12px; font-size: 0.85rem; color: #856404; font-weight: bold; text-align: center; }
+  .aclaracion { font-size: 0.72rem; color: #888; margin-top: 10px; line-height: 1.4; }
   .loading-section { text-align: center; padding: 30px 0; }
   .loading-section p { color: #555; font-size: 0.95rem; margin-top: 12px; }
   .spinner { width: 40px; height: 40px; border: 4px solid #dde3f5; border-top: 4px solid var(--ypf-gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
@@ -69,6 +70,7 @@
     <h2 id="res-title"></h2>
     <div class="code-box" id="res-code"></div>
     <p id="res-desc"></p>
+    <p id="res-aclaracion" class="aclaracion"></p>
     <div id="aviso-camiseta" class="aviso-camiseta" style="display:none;">
       IMPORTANTE: Si te retiras de la estacion sin canjear este premio, lo perderas.
     </div>
@@ -85,6 +87,16 @@ var VENDEDOR = "NUÑEZ ZARA DAIANA";
 var ESTACION = "GNC Escobar";
 var WEBHOOK = "https://script.google.com/macros/s/AKfycbzNO9eDuGxFZn-DX6ivFNpg4_g2JaIvWb6PhePSqm9G4ZmGNit72rwQCuh9mDVA6VCQ/exec";
 var revealed = false;
+var DEVICE_ID_KEY = 'raspadita_device_id';
+function obtenerDeviceId() {
+  var id = localStorage.getItem(DEVICE_ID_KEY);
+  if (!id) {
+    id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 12));
+    localStorage.setItem(DEVICE_ID_KEY, id);
+  }
+  return id;
+}
+var DEVICE_ID = obtenerDeviceId();
 var STORAGE_KEY = 'raspadita_gnc_NUÑEZ_ZARA_DAIANA_jugado';
 var hoyStr = new Date().toISOString().split('T')[0];
 var ultimaJugada = localStorage.getItem(STORAGE_KEY);
@@ -130,7 +142,7 @@ function enviarAlServidor() {
   document.getElementById('scratch-section').style.display='none';
   document.getElementById('error-section').style.display='none';
   document.getElementById('loading-section').style.display='block';
-  fetch(WEBHOOK,{method:'POST',body:JSON.stringify({accion:'sortear',vendedor:VENDEDOR,estacion:ESTACION})})
+  fetch(WEBHOOK,{method:'POST',body:JSON.stringify({accion:'sortear',vendedor:VENDEDOR,estacion:ESTACION,deviceId:DEVICE_ID})})
     .then(function(r){return r.json();})
     .then(function(data){
       if(!data || !data.premio || !data.codigo){throw new Error('respuesta incompleta');}
@@ -143,15 +155,27 @@ function enviarAlServidor() {
     });
 }
 
+var DESCRIPCIONES_PREMIO = {
+  'CAMISETA MESSI': {desc:'Camiseta Adidas Messi Argentina 2022. Retira en la estacion con este codigo.', aclaracion:''},
+  'CAFE GRATIS': {desc:'Cafe gratis en nuestra tienda. Mostra este codigo al cajero.', aclaracion:''},
+  'ALFAJOR FULL': {desc:'Alfajor Full de regalo. Mostra este codigo al cajero.', aclaracion:''},
+  'MEDIALUNAS FULL': {desc:'6 medialunas Full de regalo. Mostra este codigo al cajero.', aclaracion:''},
+  'REMERA COLAPINTO': {desc:'Remera Colapinto de regalo. Retira en la estacion con este codigo.', aclaracion:''},
+  '4 LITROS ELAION SINTETICO': {desc:'4 litros de aceite sintetico Elaion para tu vehiculo. Retira en la estacion con este codigo.', aclaracion:'Elegi tu variante en la estacion: Elaion F50 Plus 5W-40, Elaion F50 D2 5W-30, Elaion F50 F 5W-30 o Elaion F50 J 0W-20 (4 L). Sujeto a stock disponible de cada variante.'},
+  'ELAION MOTO 4T 10W-50': {desc:'1 litro de Elaion Moto 4T 10W-50. Retira en la estacion con este codigo.', aclaracion:'No tenes moto? Podes cambiarlo por 1 litro de Elaion Sintetico 5W-40.'},
+  'ELAION MOTO TRANSMISION 80W': {desc:'0,5 litros de Elaion Moto Transmision SAE 80W. Retira en la estacion con este codigo.', aclaracion:'No tenes moto? Podes cambiarlo por 1 litro de Elaion Sintetico 5W-40.'},
+  '50% OFF ELAION': {desc:'50% de descuento en lubricantes Elaion o ROD, en envases de 1 y 4 litros.', aclaracion:'No acumulable con otros cupones de descuento. Valido hasta el 30 de junio de 2026 inclusive.'}
+};
+var DESCRIPCION_DEFAULT = {desc:'20% de descuento en lubricantes Elaion o ROD, en envases de 1 y 4 litros.', aclaracion:'No acumulable con otros cupones de descuento. Valido hasta el 30 de junio de 2026 inclusive.'};
+
 function mostrarResultado(premioFinal, codigo) {
   document.getElementById('loading-section').style.display='none';
   var rs=document.getElementById('result-section'); rs.style.display='block';
   document.getElementById('res-title').textContent='GANASTE '+premioFinal+'!';
   document.getElementById('res-code').textContent=codigo;
-  var desc=premioFinal==='CAMISETA MESSI'?'Camiseta Adidas Messi Argentina 2022. Retira en la estacion con este codigo.':
-           premioFinal==='CAFE GRATIS'?'Cafe gratis en nuestra tienda. Mostra este codigo al cajero.':
-           '20% de descuento en Elaion Auro 15W-40. Valido en esta visita.';
-  document.getElementById('res-desc').textContent=desc;
+  var info = DESCRIPCIONES_PREMIO[premioFinal] || DESCRIPCION_DEFAULT;
+  document.getElementById('res-desc').textContent=info.desc;
+  document.getElementById('res-aclaracion').textContent=info.aclaracion;
   if(premioFinal==='CAMISETA MESSI') document.getElementById('aviso-camiseta').style.display='block';
 }
 </script>
