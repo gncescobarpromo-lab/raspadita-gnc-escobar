@@ -37,6 +37,8 @@
   #error-section p { font-size: 0.85rem; color: #555; margin-bottom: 14px; }
   #retry-btn { background: var(--ypf-blue); color: white; border: none; border-radius: 10px; padding: 12px 24px; font-size: 0.95rem; font-weight: bold; cursor: pointer; }
   #retry-btn:active { opacity: 0.85; }
+  .aviso-tiempo { background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px; padding: 12px; margin-top: 12px; font-size: 0.85rem; color: #856404; font-weight: bold; text-align: center; line-height: 1.5; }
+  .timestamp-sorteo { font-size: 0.80rem; color: #444; margin-top: 10px; font-weight: bold; letter-spacing: 0.3px; }
 </style>
 </head>
 <body>
@@ -73,6 +75,12 @@
     <p id="res-aclaracion" class="aclaracion"></p>
     <div id="aviso-camiseta" class="aviso-camiseta" style="display:none;">
       IMPORTANTE: Si te retiras de la estacion sin canjear este premio, lo perderas.
+    </div>
+    <p id="res-timestamp" class="timestamp-sorteo"></p>
+    <div class="aviso-tiempo">
+      &#9201; Tens <strong>10 minutos</strong> para solicitar al vendedor de playa la entrega o validacion del premio.<br>
+      Fuera de ese tiempo el premio se pierde.<br>
+      <strong>NO te vayas de la estacion sin tu premio</strong> porque el codigo se anula y no se puede canjear despues de ese tiempo.
     </div>
   </div>
   <div id="error-section">
@@ -177,6 +185,10 @@ function mostrarResultado(premioFinal, codigo) {
   document.getElementById('res-desc').textContent=info.desc;
   document.getElementById('res-aclaracion').textContent=info.aclaracion;
   if(premioFinal==='CAMISETA MESSI') document.getElementById('aviso-camiseta').style.display='block';
+  var ahoraSorteo = new Date();
+  var opcionesFecha = {timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false};
+  var fechaHoraStr = ahoraSorteo.toLocaleString('es-AR', opcionesFecha);
+  document.getElementById('res-timestamp').textContent = 'Premio obtenido: ' + fechaHoraStr;
 }
 </script>
 </body>
