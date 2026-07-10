@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Raspadita YPF Infinia - Gas Impulso</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Raspadita YPF Infinia - GNC Escobar</title>
 <style>
   :root { --ypf-blue: #003DA5; --ypf-gold: #C8973A; --light-bg: #f0f4ff; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -58,7 +61,7 @@
 <body>
 <div class="header">
   <h1>RASPADITA INFINIA</h1>
-  <p>Gas Impulso - Julio 2026</p>
+  <p>GNC Escobar - Julio 2026</p>
 </div>
 <div class="card">
   <div id="bloqueado-section" style="display:none;">
@@ -117,7 +120,7 @@
     <div class="aviso-tiempo">
       Tenés <strong>10 minutos</strong> para solicitar al vendedor de playa la entrega o validación del premio.<br>
       Fuera de ese tiempo el premio se pierde.<br>
-      <strong>NO te vayas de la estación sin tu premio</strong> porque el código se anula y no se puede canjear después de ese tiempo.
+      <strong>NO te vayas de la estacion sin tu premio</strong> porque el codigo se anula y no se puede canjear despues de ese tiempo.
     </div>
   </div>
   <div id="error-section">
@@ -129,8 +132,8 @@
 </div>
 <script>
 var VENDEDOR = "SAUER SELENE MARIANELA";
-var ESTACION = "Gas Impulso";
-var WEBHOOK = "https://script.google.com/macros/s/AKfycbz0zeIQ8LjaDhty9LI5AxDt3LPxWdePy5ruT2StKaV59a1VsopRWySrbi-viDrteT5yOA/exec";
+var ESTACION = "GNC Escobar";
+var WEBHOOK = "https://script.google.com/macros/s/AKfycbxAWZnMinsTshmoDFOz6B43Vr4yNrqcv4vi3ld-6hyoxZELRABtR_nSEYHZ-P214ONi/exec";
 var revealed = false;
 var DEVICE_ID_KEY = 'raspadita_device_id';
 function obtenerDeviceId() {
@@ -142,7 +145,7 @@ function obtenerDeviceId() {
   return id;
 }
 var DEVICE_ID = obtenerDeviceId();
-var STORAGE_KEY = 'raspadita_gas_SAUER_SELENE_MARIANELA_jugado';
+var STORAGE_KEY = 'raspadita_gnc_SAUER_SELENE_MARIANELA_jugado';
 var hoyStr = new Date().toISOString().split('T')[0];
 var ultimaJugada = localStorage.getItem(STORAGE_KEY);
 
