@@ -23,7 +23,11 @@
   .filtro-btn.activo { background: var(--ypf-blue); color: white; border-color: var(--ypf-blue); }
   .fecha-picker { display: none; margin-bottom: 12px; }
   .fecha-picker input[type=date] { width: 100%; padding: 8px 12px; border: 2px solid #dde3f5; border-radius: 8px; font-size: 0.9rem; outline: none; }
-  .ranking-title { font-size: 1rem; color: var(--ypf-blue); font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid var(--ypf-gold); padding-bottom: 6px; }
+  .rango-picker { display: none; margin-bottom: 12px; gap: 8px; }
+  .rango-picker .campo { flex: 1; }
+  .rango-picker label { display: block; font-size: 0.75rem; color: #444; font-weight: bold; margin-bottom: 4px; }
+  .rango-picker input[type=date] { width: 100%; padding: 8px 10px; border: 2px solid #dde3f5; border-radius: 8px; font-size: 0.85rem; outline: none; }
+  .ranking-title{ font-size: 1rem; color: var(--ypf-blue); font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid var(--ypf-gold); padding-bottom: 6px; }
   .ranking-item { display: flex; align-items: center; padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; background: #f8f9ff; }
   .ranking-item.top1 { background: #fff8e6; border-left: 4px solid gold; }
   .ranking-item.top2 { background: #f5f5f5; border-left: 4px solid silver; }
@@ -64,9 +68,20 @@
       <button class="filtro-btn" id="btn-semana" onclick="setFiltro('semana')">SEMANA</button>
       <button class="filtro-btn" id="btn-total" onclick="setFiltro('total')">TOTAL</button>
       <button class="filtro-btn" id="btn-dia" onclick="setFiltro('dia')">POR DIA</button>
+      <button class="filtro-btn" id="btn-rango" onclick="setFiltro('rango')">RANGO</button>
     </div>
     <div class="fecha-picker" id="fecha-picker">
       <input type="date" id="inp-fecha" onchange="renderRanking()">
+    </div>
+    <div class="rango-picker" id="rango-picker">
+      <div class="campo">
+        <label>Desde</label>
+        <input type="date" id="inp-rango-desde" onchange="renderRanking()">
+      </div>
+      <div class="campo">
+        <label>Hasta</label>
+        <input type="date" id="inp-rango-hasta" onchange="renderRanking()">
+      </div>
     </div>
     <div id="ranking-exportable">
       <div class="export-header" id="export-header">
@@ -105,9 +120,10 @@ function setFiltro(f) {
   filtroActual = f;
   document.querySelectorAll('.filtro-btn').forEach(function(b) { b.classList.remove('activo'); });
   document.getElementById('btn-' + f).classList.add('activo');
-  var titulos = {hoy:'Ranking de hoy', semana:'Ranking de la semana', total:'Ranking total de la promocion', dia:'Ranking por dia'};
+  var titulos = {hoy:'Ranking de hoy', semana:'Ranking de la semana', total:'Ranking total de la promocion', dia:'Ranking por dia', rango:'Ranking por rango de fechas'};
   document.getElementById('ranking-titulo').textContent = titulos[f];
   document.getElementById('fecha-picker').style.display = f === 'dia' ? 'block' : 'none';
+  document.getElementById('rango-picker').style.display = f === 'rango' ? 'flex' : 'none';
   renderRanking();
 }
 
@@ -134,11 +150,17 @@ function renderRanking() {
   inicioSemana.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
   var inicioSemanaStr = inicioSemana.toISOString().split('T')[0];
   var diaEspecifico = document.getElementById('inp-fecha').value;
+  var rangoDesde = document.getElementById('inp-rango-desde').value;
+  var rangoHasta = document.getElementById('inp-rango-hasta').value;
 
   var filtrados = todosLosDatos.filter(function(r) {
     if (filtroActual === 'hoy') return r.fecha === hoyStr;
     if (filtroActual === 'semana') return r.fecha >= inicioSemanaStr;
     if (filtroActual === 'dia') return diaEspecifico ? r.fecha === diaEspecifico : false;
+    if (filtroActual === 'rango') {
+      if (!rangoDesde || !rangoHasta) return false;
+      return r.fecha >= rangoDesde && r.fecha <= rangoHasta;
+    }
     return true;
   });
 
@@ -147,7 +169,9 @@ function renderRanking() {
   var lista = Object.keys(conteo).map(function(v) { return {vendedor:v, cantidad:conteo[v]}; }).sort(function(a,b) { return b.cantidad-a.cantidad; });
 
   if (lista.length === 0) {
-    document.getElementById('ranking-lista').innerHTML = '<div class="loading">Sin datos para este periodo.</div>';
+    var msg = 'Sin datos para este periodo.';
+    if (filtroActual === 'rango' && (!rangoDesde || !rangoHasta)) msg = 'Elegi la fecha desde y hasta.';
+    document.getElementById('ranking-lista').innerHTML = '<div class="loading">' + msg + '</div>';
     return;
   }
 
@@ -168,7 +192,8 @@ function renderRanking() {
 }
 
 function descargarImagen() {
-  var subtitulos = {hoy:'Hoy - '+new Date().toLocaleDateString('es-AR'), semana:'Esta semana', total:'Total promocion', dia:document.getElementById('inp-fecha').value || 'Dia seleccionado'};
+  var rangoTexto = (document.getElementById('inp-rango-desde').value || '?') + ' a ' + (document.getElementById('inp-rango-hasta').value || '?');
+  var subtitulos = {hoy:'Hoy - '+new Date().toLocaleDateString('es-AR'), semana:'Esta semana', total:'Total promocion', dia:document.getElementById('inp-fecha').value || 'Dia seleccionado', rango:rangoTexto};
   document.getElementById('export-header').style.display = 'block';
   document.getElementById('export-subtitulo').textContent = subtitulos[filtroActual];
   var el = document.getElementById('ranking-exportable');
