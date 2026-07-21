@@ -76,7 +76,7 @@
   </div>
 </div>
 <script>
-var WEBHOOK = "https://script.google.com/macros/s/AKfycbzNO9eDuGxFZn-DX6ivFNpg4_g2JaIvWb6PhePSqm9G4ZmGNit72rwQCuh9mDVA6VCQ/exec";
+var WEBHOOK = "https://script.google.com/macros/s/AKfycbxAWZnMinsTshmoDFOz6B43Vr4yNrqcv4vi3ld-6hyoxZELRABtR_nSEYHZ-P214ONi/exec";
 var PASSWORD = "282";
 var passwordIngresada = '';
 var codigoActual = '';
@@ -108,6 +108,8 @@ function verificar() {
         mostrarResultado('valido', 'Codigo valido', data.premio, 'Vendedor: ' + data.vendedor, true);
       } else if (data.status === 'ya_canjeado') {
         mostrarResultado('canjeado', 'Ya canjeado', data.premio, 'Este codigo ya fue canjeado anteriormente.');
+      } else if (data.status === 'expirado') {
+        mostrarResultado('error', 'Codigo vencido', data.premio, 'El tiempo para canjear este premio ya paso.');
       } else if (data.status === 'no_encontrado') {
         mostrarResultado('error', 'No encontrado', '', 'El codigo no existe en el sistema.');
       } else {
