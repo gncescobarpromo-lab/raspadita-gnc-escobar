@@ -26,13 +26,15 @@
   .resultado .premio { font-size: 1.3rem; font-weight: bold; color: var(--ypf-blue); margin: 8px 0; }
   .resultado .detalle { font-size: 0.85rem; color: #555; }
   .historial { margin-top: 24px; }
-  .historial h3 { font-size: 1rem; color: var(--ypf-blue); margin-bottom: 10px; border-bottom: 2px solid var(--ypf-gold); padding-bottom: 6px; }
+  .historial h3 { font-size: 1rem; color: var(--ypf-blue); margin-bottom: 10px; border-bottom: 2px solid var(--ypf-gold); padding-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
+  .historial h3 .refrescar { font-size: 0.75rem; color: var(--ypf-gold); font-weight: normal; cursor: pointer; border-bottom: none; }
   .historial-item { padding: 10px; border-radius: 8px; margin-bottom: 8px; background: #f8f9ff; border-left: 4px solid var(--ypf-gold); font-size: 0.85rem; }
   .historial-item .codigo { font-weight: bold; color: var(--ypf-blue); letter-spacing: 1px; }
   .historial-item .info { color: #555; margin-top: 2px; }
   #login-section { display: block; }
   #main-section { display: none; }
   .divider { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+  .cargando-hist { font-size: 0.82rem; color: #aaa; text-align: center; }
 </style>
 </head>
 <body>
@@ -68,9 +70,9 @@
     </div>
     <hr class="divider">
     <div class="historial">
-      <h3>Canjes de hoy</h3>
+      <h3>Canjes de hoy <span class="refrescar" onclick="cargarHistorialHoy()">↻ actualizar</span></h3>
       <div id="historial-lista">
-        <p style="font-size:0.82rem;color:#aaa;text-align:center;">Aun no hay canjes registrados</p>
+        <p class="cargando-hist">Cargando...</p>
       </div>
     </div>
   </div>
@@ -80,7 +82,6 @@ var WEBHOOK = "https://script.google.com/macros/s/AKfycbxAWZnMinsTshmoDFOz6B43Vr
 var PASSWORD = "282";
 var passwordIngresada = '';
 var codigoActual = '';
-var historial = [];
 
 function login() {
   var pass = document.getElementById('inp-password').value.trim();
@@ -88,6 +89,7 @@ function login() {
     passwordIngresada = pass;
     document.getElementById('login-section').style.display = 'none';
     document.getElementById('main-section').style.display = 'block';
+    cargarHistorialHoy();
   } else {
     document.getElementById('login-msg').textContent = 'Contrasena incorrecta.';
   }
@@ -143,7 +145,7 @@ function confirmarCanje() {
         mostrarResultado('valido', 'Entrega confirmada!', premio, 'Registrado por: ' + encargado);
         document.getElementById('btn-canjear').style.display = 'none';
         document.getElementById('inp-codigo').value = '';
-        agregarHistorial(codigoActual, premio, encargado);
+        cargarHistorialHoy();
       } else if (data.status === 'ya_canjeado') {
         mostrarResultado('canjeado', 'Ya canjeado', '', 'Este codigo ya fue canjeado anteriormente.');
       } else {
@@ -155,18 +157,28 @@ function confirmarCanje() {
     });
 }
 
-function agregarHistorial(codigo, premio, encargado) {
-  var ahora = new Date();
-  var hora = ahora.getHours().toString().padStart(2,'0') + ':' + ahora.getMinutes().toString().padStart(2,'0');
-  historial.unshift({codigo: codigo, premio: premio, encargado: encargado, hora: hora});
+function cargarHistorialHoy() {
   var lista = document.getElementById('historial-lista');
-  lista.innerHTML = '';
-  historial.forEach(function(item) {
-    var div = document.createElement('div');
-    div.className = 'historial-item';
-    div.innerHTML = '<div class="codigo">' + item.codigo + ' - ' + item.premio + '</div><div class="info">' + item.hora + ' | Entregado por: ' + item.encargado + '</div>';
-    lista.appendChild(div);
-  });
+  lista.innerHTML = '<p class="cargando-hist">Cargando...</p>';
+  var payload = {accion: 'historial_canjes_hoy', password: passwordIngresada};
+  fetch(WEBHOOK, {method: 'POST', body: JSON.stringify(payload)})
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.canjes || data.canjes.length === 0) {
+        lista.innerHTML = '<p class="cargando-hist">Aun no hay canjes registrados hoy</p>';
+        return;
+      }
+      lista.innerHTML = '';
+      data.canjes.forEach(function(item) {
+        var div = document.createElement('div');
+        div.className = 'historial-item';
+        div.innerHTML = '<div class="codigo">' + item.codigo + ' - ' + item.premio + '</div><div class="info">' + item.hora + ' | Vendedor: ' + item.vendedor + ' | Entregado por: ' + item.entregado_por + '</div>';
+        lista.appendChild(div);
+      });
+    })
+    .catch(function() {
+      lista.innerHTML = '<p class="cargando-hist">No se pudo cargar el historial. Toca "actualizar" para reintentar.</p>';
+    });
 }
 </script>
 </body>
