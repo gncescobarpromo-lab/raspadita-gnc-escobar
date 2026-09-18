@@ -56,6 +56,18 @@
   .codigo-error { display: none; background: #fbeaea; color: #a32d2d; border: 2px solid #e5a3a3; border-radius: 10px; padding: 10px 12px; font-size: 0.82rem; text-align: center; margin-bottom: 12px; font-weight: bold; }
   #codigo-submit { width: 100%; background: var(--ypf-blue); color: white; border: none; border-radius: 10px; padding: 14px; font-size: 1rem; font-weight: bold; cursor: pointer; }
   #codigo-submit:active { opacity: 0.85; }
+
+  /* --- NUEVO: seccion de telefono --- */
+  #telefono-section { display: none; }
+  .telefono-label { font-size: 0.9rem; color: #222; font-weight: bold; margin-bottom: 6px; text-align: center; }
+  .telefono-sublabel { font-size: 0.78rem; color: #666; margin-bottom: 14px; text-align: center; line-height: 1.4; }
+  .telefono-input-wrap { display: flex; gap: 8px; margin-bottom: 8px; }
+  .telefono-prefijo { width: 60px; text-align: center; font-size: 1rem; padding: 12px 4px; border: 2px solid #ddd; border-radius: 10px; font-weight: bold; color: var(--ypf-blue); background: #f7f7f7; }
+  #telefono-input { flex: 1; font-size: 1.05rem; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-weight: bold; color: var(--ypf-blue); }
+  .telefono-error { display: none; background: #fbeaea; color: #a32d2d; border: 2px solid #e5a3a3; border-radius: 10px; padding: 10px 12px; font-size: 0.82rem; text-align: center; margin-bottom: 12px; font-weight: bold; }
+  #telefono-submit { width: 100%; background: var(--ypf-blue); color: white; border: none; border-radius: 10px; padding: 14px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+  #telefono-submit:active { opacity: 0.85; }
+  #telefono-omitir { width: 100%; background: transparent; color: #888; border: none; padding: 8px; font-size: 0.82rem; text-decoration: underline; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -91,6 +103,19 @@
     <input type="tel" id="codigo-input" maxlength="6" autocomplete="off" placeholder="">
     <div class="codigo-error" id="codigo-error"></div>
     <button id="codigo-submit" onclick="validarCodigo()">Participar</button>
+  </div>
+
+  <!-- NUEVO: paso de telefono, opcional -->
+  <div id="telefono-section">
+    <p class="telefono-label">Queres recibir tu resultado por WhatsApp?</p>
+    <p class="telefono-sublabel">Te avisamos apenas rasques tu premio. Es opcional.</p>
+    <div class="telefono-input-wrap">
+      <div class="telefono-prefijo">+54 9</div>
+      <input type="tel" id="telefono-input" inputmode="numeric" autocomplete="off" placeholder="11 2345 6789">
+    </div>
+    <div class="telefono-error" id="telefono-error"></div>
+    <button id="telefono-submit" onclick="confirmarTelefono()">Continuar</button>
+    <button id="telefono-omitir" onclick="omitirTelefono()">Prefiero no dar mi numero</button>
   </div>
 
   <div id="scratch-section">
@@ -151,6 +176,7 @@ var ultimaJugada = localStorage.getItem(STORAGE_KEY);
 
 var VEHICULO_ELEGIDO = null;
 var IMPORTE_INGRESADO = null;
+var TELEFONO_INGRESADO = '';
 var MINIMOS = { moto: 5000, auto: 20000 };
 var DIGITOS = { moto: 5, auto: 6 };
 
@@ -196,6 +222,33 @@ function validarCodigo() {
   errorBox.style.display = 'none';
   IMPORTE_INGRESADO = importe;
   document.getElementById('codigo-section').style.display = 'none';
+  document.getElementById('telefono-section').style.display = 'block';
+}
+
+/* --- NUEVO: manejo del paso de telefono --- */
+function confirmarTelefono() {
+  var valor = document.getElementById('telefono-input').value.trim();
+  var errorBox = document.getElementById('telefono-error');
+  var soloDigitos = valor.replace(/[^0-9]/g, '');
+
+  if (soloDigitos.length < 8 || soloDigitos.length > 12) {
+    errorBox.textContent = 'Ingresa un numero de WhatsApp valido (sin 0 ni 15).';
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  errorBox.style.display = 'none';
+  TELEFONO_INGRESADO = '549' + soloDigitos;
+  irAScratch();
+}
+
+function omitirTelefono() {
+  TELEFONO_INGRESADO = '';
+  irAScratch();
+}
+
+function irAScratch() {
+  document.getElementById('telefono-section').style.display = 'none';
   document.getElementById('scratch-section').style.display = 'block';
   initScratch();
 }
@@ -240,7 +293,8 @@ function enviarAlServidor() {
     estacion:ESTACION,
     deviceId:DEVICE_ID,
     tipo_vehiculo:VEHICULO_ELEGIDO,
-    importe:IMPORTE_INGRESADO
+    importe:IMPORTE_INGRESADO,
+    telefono:TELEFONO_INGRESADO
   })})
     .then(function(r){return r.json();})
     .then(function(data){
