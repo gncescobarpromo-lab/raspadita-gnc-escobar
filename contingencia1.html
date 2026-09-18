@@ -57,7 +57,7 @@
   #codigo-submit { width: 100%; background: var(--ypf-blue); color: white; border: none; border-radius: 10px; padding: 14px; font-size: 1rem; font-weight: bold; cursor: pointer; }
   #codigo-submit:active { opacity: 0.85; }
 
-  /* --- NUEVO: seccion de telefono --- */
+  /* --- seccion de telefono --- */
   #telefono-section { display: none; }
   .telefono-label { font-size: 0.9rem; color: #222; font-weight: bold; margin-bottom: 6px; text-align: center; }
   .telefono-sublabel { font-size: 0.78rem; color: #666; margin-bottom: 14px; text-align: center; line-height: 1.4; }
@@ -68,6 +68,11 @@
   #telefono-submit { width: 100%; background: var(--ypf-blue); color: white; border: none; border-radius: 10px; padding: 14px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
   #telefono-submit:active { opacity: 0.85; }
   #telefono-omitir { width: 100%; background: transparent; color: #888; border: none; padding: 8px; font-size: 0.82rem; text-decoration: underline; cursor: pointer; }
+
+  /* --- NUEVO: checkbox opt-in WhatsApp --- */
+  .optin-wrap { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 14px; text-align: left; }
+  .optin-wrap input[type="checkbox"] { margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0; }
+  .optin-wrap label { font-size: 0.76rem; color: #555; line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -105,7 +110,7 @@
     <button id="codigo-submit" onclick="validarCodigo()">Participar</button>
   </div>
 
-  <!-- NUEVO: paso de telefono, opcional -->
+  <!-- paso de telefono, opcional -->
   <div id="telefono-section">
     <p class="telefono-label">Queres recibir tu resultado por WhatsApp?</p>
     <p class="telefono-sublabel">Te avisamos apenas rasques tu premio. Es opcional.</p>
@@ -114,6 +119,10 @@
       <input type="tel" id="telefono-input" inputmode="numeric" autocomplete="off" placeholder="11 2345 6789">
     </div>
     <div class="telefono-error" id="telefono-error"></div>
+    <div class="optin-wrap">
+      <input type="checkbox" id="optin-checkbox" checked>
+      <label for="optin-checkbox">Quiero recibir por WhatsApp novedades y avisos de promociones de GNC Escobar (incluido el sorteo de la moto)</label>
+    </div>
     <button id="telefono-submit" onclick="confirmarTelefono()">Continuar</button>
     <button id="telefono-omitir" onclick="omitirTelefono()">Prefiero no dar mi numero</button>
   </div>
@@ -177,6 +186,7 @@ var ultimaJugada = localStorage.getItem(STORAGE_KEY);
 var VEHICULO_ELEGIDO = null;
 var IMPORTE_INGRESADO = null;
 var TELEFONO_INGRESADO = '';
+var OPTIN_WHATSAPP = false;
 var MINIMOS = { moto: 5000, auto: 20000 };
 var DIGITOS = { moto: 5, auto: 6 };
 
@@ -225,7 +235,7 @@ function validarCodigo() {
   document.getElementById('telefono-section').style.display = 'block';
 }
 
-/* --- NUEVO: manejo del paso de telefono --- */
+/* --- manejo del paso de telefono --- */
 function confirmarTelefono() {
   var valor = document.getElementById('telefono-input').value.trim();
   var errorBox = document.getElementById('telefono-error');
@@ -239,11 +249,13 @@ function confirmarTelefono() {
 
   errorBox.style.display = 'none';
   TELEFONO_INGRESADO = '549' + soloDigitos;
+  OPTIN_WHATSAPP = document.getElementById('optin-checkbox').checked;
   irAScratch();
 }
 
 function omitirTelefono() {
   TELEFONO_INGRESADO = '';
+  OPTIN_WHATSAPP = false;
   irAScratch();
 }
 
@@ -294,7 +306,8 @@ function enviarAlServidor() {
     deviceId:DEVICE_ID,
     tipo_vehiculo:VEHICULO_ELEGIDO,
     importe:IMPORTE_INGRESADO,
-    telefono:TELEFONO_INGRESADO
+    telefono:TELEFONO_INGRESADO,
+    optin:OPTIN_WHATSAPP
   })})
     .then(function(r){return r.json();})
     .then(function(data){
