@@ -56,12 +56,20 @@
   .codigo-error { display: none; background: #fbeaea; color: #a32d2d; border: 2px solid #e5a3a3; border-radius: 10px; padding: 10px 12px; font-size: 0.82rem; text-align: center; margin-bottom: 12px; font-weight: bold; }
   #codigo-submit { width: 100%; background: var(--ypf-blue); color: white; border: none; border-radius: 10px; padding: 14px; font-size: 1rem; font-weight: bold; cursor: pointer; }
   #codigo-submit:active { opacity: 0.85; }
+
+  /* --- confirmacion por WhatsApp (dentro del resultado) --- */
+  #whatsapp-section { margin-top: 16px; padding-top: 14px; border-top: 1px dashed #ddd; }
+  .whatsapp-label { font-size: 0.85rem; color: #333; font-weight: bold; margin-bottom: 10px; text-align: center; }
+  .btn-whatsapp { display: block; width: 100%; background: #25D366; color: white; border: none; border-radius: 10px; padding: 14px; font-size: 0.95rem; font-weight: bold; text-align: center; text-decoration: none; cursor: pointer; }
+  .btn-whatsapp:active { opacity: 0.85; }
+  .whatsapp-nota { font-size: 0.72rem; color: #888; margin-top: 8px; text-align: center; line-height: 1.4; }
+  #whatsapp-confirmado { display: none; font-size: 0.82rem; color: #1a7a3c; font-weight: bold; text-align: center; margin-top: 10px; }
 </style>
 </head>
 <body>
 <div class="header">
   <h1>RASPADITA INFINIA</h1>
-  <p>GNC Escobar - Agosto 2026</p>
+  <p>GNC Escobar - Septiembre 2026</p>
 </div>
 <div class="card">
   <div id="bloqueado-section" style="display:none;">
@@ -122,18 +130,25 @@
       Fuera de ese tiempo el premio se pierde.<br>
       <strong>NO te vayas de la estación sin tu premio</strong> porque el código se anula y no se puede canjear después de ese tiempo.
     </div>
+    <div id="whatsapp-section">
+      <p class="whatsapp-label">Queres recibir este resultado por WhatsApp?</p>
+      <a id="btn-whatsapp" href="#" target="_blank" class="btn-whatsapp" onclick="confirmarPorWhatsapp()">Confirmar por WhatsApp</a>
+      <p class="whatsapp-nota">Se abre WhatsApp con un mensaje ya escrito. Solo toca enviar.</p>
+      <p id="whatsapp-confirmado">Listo. Revisa tu WhatsApp en unos segundos.</p>
+    </div>
   </div>
   <div id="error-section">
     <h3>No pudimos confirmar tu premio</h3>
     <p>Hubo un problema de conexion. Tu jugada todavia no se registro, asi que no la perdiste. Toca el boton para reintentar.</p>
     <button id="retry-btn" onclick="enviarAlServidor()">Reintentar</button>
   </div>
-  <div class="footer">Promocion valida del 20 al 31 de agosto 2026 - Solo con carga de Infinia</div>
+  <div class="footer">Promocion valida del 24 al 30 de septiembre 2026 - Solo con carga de Infinia</div>
 </div>
 <script>
 var VENDEDOR = "CAÑETE LOANA";
 var ESTACION = "GNC Escobar";
-var WEBHOOK = "https://script.google.com/macros/s/AKfycbxAWZnMinsTshmoDFOz6B43Vr4yNrqcv4vi3ld-6hyoxZELRABtR_nSEYHZ-P214ONi/exec";
+var WEBHOOK = "https://script.google.com/macros/s/AKfycbzLSO7QT1ERisH0E7aHW0S-aU2dok5goMu01IGRCT2Szgo7pnhX2LYBO4ceps9jVgKFCw/exec";
+var WHATSAPP_NUMERO = "5491124809870";
 var revealed = false;
 var DEVICE_ID_KEY = 'raspadita_device_id';
 function obtenerDeviceId() {
@@ -267,18 +282,23 @@ function enviarAlServidor() {
 }
 
 var DESCRIPCIONES_PREMIO = {
-  'CAFE GRATIS': {desc:'Cafe gratis en nuestra tienda. Mostra este codigo al cajero.', aclaracion:''},
-  'ALFAJOR FULL': {desc:'Alfajor Full de regalo. Mostra este codigo al cajero.', aclaracion:''},
   'REMERA COLAPINTO': {desc:'Remera Colapinto de regalo. Retira en la estacion con este codigo.', aclaracion:''},
   '4 LITROS ELAION SINTETICO': {desc:'4 litros de aceite sintetico Elaion para tu vehiculo. Retira en la estacion con este codigo.', aclaracion:'Elegi tu variante en la estacion: Elaion F50 Plus 5W-40, Elaion F50 D2 5W-30, Elaion F50 F 5W-30 o Elaion F50 J 0W-20 (4 L). Sujeto a stock disponible de cada variante.'},
-  '1 LITRO ELAION SINTETICO': {desc:'1 litro de aceite sintetico Elaion para tu vehiculo. Retira en la estacion con este codigo.', aclaracion:'Elegi tu variante en la estacion segun stock disponible.'},
   'ELAION MOTO 4T 10W-50': {desc:'1 litro de Elaion Moto 4T 10W-50. Retira en la estacion con este codigo.', aclaracion:''},
   'ELAION MOTO TRANSMISION 80W': {desc:'0,5 litros de Elaion Moto Transmision SAE 80W. Retira en la estacion con este codigo.', aclaracion:''},
   '50% OFF ELAION': {desc:'50% de descuento en lubricantes Elaion o ROD, en envases de 1 y 4 litros.', aclaracion:'No acumulable con otros cupones de descuento.'},
   '30% OFF ELAION': {desc:'30% de descuento en lubricantes Elaion o ROD, en envases de 1 y 4 litros.', aclaracion:'No acumulable con otros cupones de descuento.'},
-  '10 LITROS INFINIA GRATIS': {desc:'10 litros de Infinia gratis en tu proxima compra. Mostra este codigo al cajero.', aclaracion:''}
+  '10% OFF INFINIA': {desc:'10% de descuento en tu proxima carga de Infinia.', aclaracion:'No acumulable con otros cupones de descuento.'},
+  '10 LITROS INFINIA GRATIS': {desc:'10 litros de Infinia gratis en tu proxima compra. Mostra este codigo al cajero.', aclaracion:''},
+  'CUBRE CASCO': {desc:'Cubre casco de regalo. Retira en la estacion con este codigo.', aclaracion:''}
 };
 var DESCRIPCION_DEFAULT = {desc:'20% de descuento en lubricantes Elaion o ROD, en envases de 1 y 4 litros.', aclaracion:'No acumulable con otros cupones de descuento.'};
+
+// Estos premios no vencen a los 20 minutos: se pueden canjear cualquier dia
+// hasta el 10 de octubre, mostrando esta misma pantalla/codigo en el mostrador.
+var PREMIOS_PLAZO_LARGO = ['20% OFF ELAION', '30% OFF ELAION', '50% OFF ELAION', '10% OFF INFINIA'];
+
+var CODIGO_ACTUAL = null;
 
 function mostrarResultado(premioFinal, codigo) {
   document.getElementById('loading-section').style.display='none';
@@ -292,6 +312,22 @@ function mostrarResultado(premioFinal, codigo) {
   var opcionesFecha = {timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false};
   var fechaHoraStr = ahoraSorteo.toLocaleString('es-AR', opcionesFecha);
   document.getElementById('res-timestamp').textContent = 'Premio obtenido: ' + fechaHoraStr;
+
+  var avisoTiempo = document.querySelector('.aviso-tiempo');
+  if (PREMIOS_PLAZO_LARGO.indexOf(premioFinal) !== -1) {
+    avisoTiempo.innerHTML = 'Podés canjear este premio <strong>en cualquier momento hasta el 10 de octubre</strong>.<br>Mostrá esta misma pantalla o tu código en el mostrador el día que quieras usarlo.';
+  } else {
+    avisoTiempo.innerHTML = 'Tenés <strong>10 minutos</strong> para solicitar al vendedor de playa la entrega o validación del premio.<br>Fuera de ese tiempo el premio se pierde.<br><strong>NO te vayas de la estación sin tu premio</strong> porque el código se anula y no se puede canjear después de ese tiempo.';
+  }
+
+  CODIGO_ACTUAL = codigo;
+  var mensaje = 'Hola, quiero confirmar mi premio de la Raspadita GNC Escobar. Mi codigo es ' + codigo;
+  var link = 'https://wa.me/' + WHATSAPP_NUMERO + '?text=' + encodeURIComponent(mensaje);
+  document.getElementById('btn-whatsapp').setAttribute('href', link);
+}
+
+function confirmarPorWhatsapp() {
+  document.getElementById('whatsapp-confirmado').style.display = 'block';
 }
 </script>
 </body>
