@@ -148,11 +148,11 @@ function cargarRanking() {
 }
 
 function renderRanking() {
-  var hoy = new Date();
-  var hoyStr = hoy.toISOString().split('T')[0];
-  var inicioSemana = new Date(hoy);
-  inicioSemana.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
-  var inicioSemanaStr = inicioSemana.toISOString().split('T')[0];
+  // Fecha de hoy en hora Argentina (toISOString usa UTC y rompia el filtro HOY)
+  var hoyStr = new Date().toLocaleDateString('en-CA', {timeZone: 'America/Argentina/Buenos_Aires'});
+  var hoyUTC = new Date(hoyStr + 'T12:00:00Z');
+  hoyUTC.setUTCDate(hoyUTC.getUTCDate() - ((hoyUTC.getUTCDay() + 6) % 7));
+  var inicioSemanaStr = hoyUTC.toISOString().split('T')[0];
   var diaEspecifico = document.getElementById('inp-fecha').value;
   var rangoDesde = document.getElementById('inp-rango-desde').value;
   var rangoHasta = document.getElementById('inp-rango-hasta').value;
@@ -214,14 +214,14 @@ function renderRanking() {
 
 function descargarImagen() {
   var rangoTexto = (document.getElementById('inp-rango-desde').value || '?') + ' a ' + (document.getElementById('inp-rango-hasta').value || '?');
-  var subtitulos = {hoy:'Hoy - '+new Date().toLocaleDateString('es-AR'), semana:'Esta semana', total:'Total promocion', dia:document.getElementById('inp-fecha').value || 'Dia seleccionado', rango:rangoTexto};
+  var subtitulos = {hoy:'Hoy - '+new Date().toLocaleDateString('es-AR', {timeZone: 'America/Argentina/Buenos_Aires'}), semana:'Esta semana', total:'Total promocion', dia:document.getElementById('inp-fecha').value || 'Dia seleccionado', rango:rangoTexto};
   document.getElementById('export-header').style.display = 'block';
   document.getElementById('export-subtitulo').textContent = subtitulos[filtroActual];
   var el = document.getElementById('ranking-exportable');
   html2canvas(el, {backgroundColor:'#ffffff', scale:2}).then(function(canvas) {
     document.getElementById('export-header').style.display = 'none';
     var link = document.createElement('a');
-    link.download = 'ranking_gnc_escobar_' + new Date().toLocaleDateString('es-AR').replace(/\//g,'-') + '.png';
+    link.download = 'ranking_gnc_escobar_' + new Date().toLocaleDateString('es-AR', {timeZone: 'America/Argentina/Buenos_Aires'}).replace(/\//g,'-') + '.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
   });
