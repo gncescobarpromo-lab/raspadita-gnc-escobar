@@ -95,7 +95,7 @@
       <div id="ranking-lista"><div class="loading">Cargando datos...</div></div>
     </div>
     <div class="ultima-act" id="ultima-act"></div>
-    <button class="btn btn-blue" onclick="cargarRanking()">ACTUALIZAR</button>
+    <button class="btn btn-blue" onclick="cargarRanking(1)">ACTUALIZAR</button>
     <button class="btn btn-green" onclick="descargarImagen()">DESCARGAR PARA WHATSAPP</button>
   </div>
 </div>
@@ -131,20 +131,47 @@ function setFiltro(f) {
   renderRanking();
 }
 
-function cargarRanking() {
-  document.getElementById('ranking-lista').innerHTML = '<div class="loading">Cargando datos...</div>';
-  fetch(WEBHOOK, {method:'POST', body:JSON.stringify({accion:'ranking', password:PASSWORD})})
+// Convierte la fecha que manda el servidor (fecha completa en UTC, ej. "2026-09-25T18:11:07.000Z")
+// a "aaaa-mm-dd" en hora Argentina, que es el formato de los filtros HOY / POR DIA / RANGO.
+function normalizarFecha(f) {
+  if (!f) return '';
+  var s = String(f);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  var d = new Date(s);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-CA', {timeZone: 'America/Argentina/Buenos_Aires'});
+}
+
+var cargando = false;
+function cargarRanking(intento) {
+  intento = intento || 1;
+  if (cargando && intento === 1) return;
+  cargando = true;
+  document.getElementById('ranking-lista').innerHTML = '<div class="loading">Cargando datos...' + (intento > 1 ? ' (reintentando)' : '') + '</div>';
+  var ctrl = window.AbortController ? new AbortController() : null;
+  var timer = setTimeout(function() { if (ctrl) ctrl.abort(); }, 30000);
+  fetch(WEBHOOK, {method:'POST', body:JSON.stringify({accion:'ranking', password:PASSWORD}), signal: ctrl ? ctrl.signal : undefined})
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      clearTimeout(timer);
       if (data.status === 'ok') {
-        todosLosDatos = data.registros;
+        cargando = false;
+        todosLosDatos = (data.registros || []).map(function(r) {
+          return { fecha: normalizarFecha(r.fecha), vendedor: r.vendedor, premio: r.premio };
+        }).filter(function(r) { return r.fecha && r.vendedor; });
         renderRanking();
-        document.getElementById('ultima-act').textContent = 'Ultima actualizacion: ' + new Date().toLocaleTimeString('es-AR');
+        document.getElementById('ultima-act').textContent = 'Ultima actualizacion: ' + new Date().toLocaleTimeString('es-AR', {timeZone: 'America/Argentina/Buenos_Aires'});
       } else {
-        document.getElementById('ranking-lista').innerHTML = '<div class="loading">Error al cargar datos.</div>';
+        throw new Error(data.mensaje || data.status || 'error');
       }
     })
-    .catch(function() { document.getElementById('ranking-lista').innerHTML = '<div class="loading">Error de conexion.</div>'; });
+    .catch(function(err) {
+      clearTimeout(timer);
+      if (intento < 2) { setTimeout(function() { cargarRanking(intento + 1); }, 2000); return; }
+      cargando = false;
+      var msg = (err && err.name === 'AbortError') ? 'El servidor tardo demasiado en responder.' : 'Error al cargar datos.';
+      document.getElementById('ranking-lista').innerHTML = '<div class="loading">' + msg + ' Toca ACTUALIZAR para reintentar.</div>';
+    });
 }
 
 function renderRanking() {
@@ -163,11 +190,16 @@ function renderRanking() {
     if (filtroActual === 'dia') return diaEspecifico ? r.fecha === diaEspecifico : false;
     if (filtroActual === 'rango') {
       if (!rangoDesde || !rangoHasta) return false;
-      return r.fecha >= rangoDesde && r.fecha <= rangoHasta;
+      var d1 = rangoDesde < rangoHasta ? rangoDesde : rangoHasta, d2 = rangoDesde < rangoHasta ? rangoHasta : rangoDesde;
+      return r.fecha >= d1 && r.fecha <= d2;
     }
     return true;
   });
 
+  if (filtroActual === 'dia' && !diaEspecifico) {
+    document.getElementById('ranking-lista').innerHTML = '<div class="loading">Elegi una fecha.</div>';
+    return;
+  }
   if (filtroActual === 'rango' && (!rangoDesde || !rangoHasta)) {
     document.getElementById('ranking-lista').innerHTML = '<div class="loading">Elegi la fecha desde y hasta.</div>';
     return;
