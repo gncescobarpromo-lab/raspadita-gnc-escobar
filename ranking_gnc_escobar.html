@@ -157,7 +157,7 @@ function cargarRanking(intento) {
       if (data.status === 'ok') {
         cargando = false;
         todosLosDatos = (data.registros || []).map(function(r) {
-          return { fecha: normalizarFecha(r.fecha), vendedor: r.vendedor, premio: r.premio };
+          return { fecha: normalizarFecha(r.fecha), vendedor: r.vendedor, premio: r.premio, n: Number(r.n) || 1 };
         }).filter(function(r) { return r.fecha && r.vendedor; });
         renderRanking();
         document.getElementById('ultima-act').textContent = 'Ultima actualizacion: ' + new Date().toLocaleTimeString('es-AR', {timeZone: 'America/Argentina/Buenos_Aires'});
@@ -216,10 +216,11 @@ function renderRanking() {
   var lista = Object.keys(porVendedor).map(function(v) {
     var registros = porVendedor[v];
     var porDia = {};
-    registros.forEach(function(r) { porDia[r.fecha] = (porDia[r.fecha] || 0) + 1; });
+    var total = 0;
+    registros.forEach(function(r) { porDia[r.fecha] = (porDia[r.fecha] || 0) + r.n; total += r.n; });
     var diasValidos = 0;
     Object.keys(porDia).forEach(function(d) { if (porDia[d] >= UMBRAL_DIA_VALIDO) diasValidos++; });
-    return { vendedor: v, cantidad: registros.length, dias: diasValidos };
+    return { vendedor: v, cantidad: total, dias: diasValidos };
   }).sort(function(a, b) { return b.cantidad - a.cantidad; });
 
   if (lista.length === 0) {
