@@ -6,14 +6,14 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Raspadita YPF Infinia - GNC Escobar</title>
+<title>Raspá y Participá - GNC Escobar</title>
 <style>
   :root { --ypf-blue: #003DA5; --ypf-gold: #C8973A; --light-bg: #f0f4ff; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, sans-serif; background: var(--light-bg); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
   .header { background: var(--ypf-blue); width: 100%; max-width: 420px; border-radius: 16px 16px 0 0; padding: 18px; text-align: center; }
   .header h1 { font-size: 1.6rem; color: var(--ypf-gold); letter-spacing: 1px; }
-  .header p { font-size: 0.85rem; color: rgba(255,255,255,0.9); margin-top: 4px; }
+  .header p { font-size: 1.2rem; font-weight: bold; color: #FFE08A; letter-spacing: 0.5px; line-height: 1.3; margin-top: 8px; }
   .card { background: white; width: 100%; max-width: 420px; border-radius: 0 0 16px 16px; box-shadow: 0 8px 30px rgba(0,61,165,0.15); padding: 24px; }
   .scratch-area { position: relative; width: 100%; height: 200px; border-radius: 12px; overflow: hidden; margin-bottom: 20px; cursor: crosshair; border: 3px solid var(--ypf-gold); }
   #prize-display { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--ypf-blue); color: white; text-align: center; padding: 16px; z-index: 1; }
@@ -52,7 +52,8 @@
   .vehiculo-info { font-size: 0.78rem; color: #666; text-align: center; line-height: 1.5; }
   #codigo-section { display: none; }
   .codigo-label { font-size: 0.9rem; color: #222; font-weight: bold; margin-bottom: 10px; text-align: center; }
-  #codigo-input { width: 100%; font-size: 1.4rem; text-align: center; letter-spacing: 6px; padding: 12px; border: 2px solid #ddd; border-radius: 10px; margin-bottom: 8px; font-weight: bold; color: var(--ypf-blue); }
+  .codigo-ayuda { font-size: 0.78rem; color: #666; text-align: center; margin-bottom: 10px; }
+  #codigo-input { width: 100%; font-size: 1.4rem; text-align: center; letter-spacing: 3px; text-transform: uppercase; padding: 12px; border: 2px solid #ddd; border-radius: 10px; margin-bottom: 8px; font-weight: bold; color: var(--ypf-blue); }
   .codigo-error { display: none; background: #fbeaea; color: #a32d2d; border: 2px solid #e5a3a3; border-radius: 10px; padding: 10px 12px; font-size: 0.82rem; text-align: center; margin-bottom: 12px; font-weight: bold; }
   #codigo-submit { width: 100%; background: var(--ypf-blue); color: white; border: none; border-radius: 10px; padding: 14px; font-size: 1rem; font-weight: bold; cursor: pointer; }
   #codigo-submit:active { opacity: 0.85; }
@@ -63,24 +64,33 @@
   .btn-whatsapp { display: block; width: 100%; background: #25D366; color: white; border: none; border-radius: 10px; padding: 14px; font-size: 0.95rem; font-weight: bold; text-align: center; text-decoration: none; cursor: pointer; }
   .btn-whatsapp:active { opacity: 0.85; }
   .whatsapp-nota { font-size: 0.72rem; color: #888; margin-top: 8px; text-align: center; line-height: 1.4; }
+  .rifa-box { margin-top: 14px; padding: 12px; background: var(--light-bg); border: 2px solid var(--ypf-gold); border-radius: 10px; text-align: left; }
+  .rifa-titulo { font-weight: bold; color: var(--ypf-blue); font-size: 1rem; margin-bottom: 6px; text-align: center; }
+  #rifa-cant { font-size: 0.88rem; color: #333; text-align: center; margin-bottom: 8px; }
+  .rifa-paso { font-size: 0.82rem; color: #333; margin-bottom: 8px; }
+  #codigo2-input { width: 100%; font-size: 1.3rem; text-align: center; letter-spacing: 6px; padding: 10px; border: 2px solid #ddd; border-radius: 10px; margin-bottom: 8px; font-weight: bold; color: var(--ypf-blue); }
+  #codigo2-submit { width: 100%; background: var(--ypf-blue); color: white; border: none; border-radius: 10px; padding: 12px; font-size: 0.95rem; font-weight: bold; cursor: pointer; }
+  .btn-whatsapp.deshabilitado { background: #b5b5b5; pointer-events: none; }
   #whatsapp-confirmado { display: none; font-size: 0.82rem; color: #1a7a3c; font-weight: bold; text-align: center; margin-top: 10px; }
 </style>
 </head>
 <body>
 <div class="header">
-  <h1>RASPADITA INFINIA</h1>
-  <p>GNC Escobar - Septiembre 2026</p>
+  <h1>RASPÁ Y PARTICIPÁ</h1>
+  <p>SORTEO DE 2 MOTOS CORVEN 110<br>GNC ESCOBAR</p>
 </div>
 <div class="card">
-  <div id="bloqueado-section" style="display:none;">
-    <div class="bloqueado">
-      <h3>Ya participaste hoy</h3>
-      <p>Cada cliente puede jugar una vez por dia. Volve manana para una nueva oportunidad.</p>
-    </div>
+  <div id="codigo-section" style="display:block;">
+    <p class="codigo-label">Ingresa tu codigo</p>
+    <p class="codigo-ayuda">Son 2 letras del producto + el importe del ticket. Ej: GN15000</p>
+    <input type="text" id="codigo-input" maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="GN15000">
+    <div class="codigo-error" id="codigo-error"></div>
+    <button id="codigo-submit" onclick="validarCodigo()">Participar</button>
+    <p class="vehiculo-info" style="margin-top:12px;">Importe minimo: GNC $7.000 &middot; Full $3.000<br>Combustibles liquidos: auto o transporte pesado $25.000 &middot; moto $5.000</p>
   </div>
 
-  <div id="vehiculo-section">
-    <p class="vehiculo-pregunta">Que cargaste?</p>
+  <div id="vehiculo-section" style="display:none;">
+    <p class="vehiculo-pregunta">Que vehiculo cargo?</p>
     <div class="vehiculo-opciones">
       <button type="button" class="vehiculo-btn" onclick="elegirVehiculo('moto')">
         <svg viewBox="0 0 24 24"><circle cx="5" cy="17" r="2.5"/><circle cx="19" cy="17" r="2.5"/><path d="M5 17h4l3-6h4l2 4h2M9 11l-2-4H4"/></svg>
@@ -88,21 +98,13 @@
       </button>
       <button type="button" class="vehiculo-btn" onclick="elegirVehiculo('auto')">
         <svg viewBox="0 0 24 24"><path d="M3 16l1.5-5A2 2 0 0 1 6.4 9.5h11.2A2 2 0 0 1 19.5 11L21 16"/><rect x="2.5" y="16" width="19" height="3.5" rx="1"/><circle cx="7" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/></svg>
-        <span>Auto</span>
+        <span>Auto / Camion</span>
       </button>
     </div>
-    <p class="vehiculo-info">Moto: importe minimo $5.000<br>Auto: importe minimo $20.000</p>
-  </div>
-
-  <div id="codigo-section">
-    <p class="codigo-label">Ingresa tu codigo</p>
-    <input type="tel" id="codigo-input" maxlength="6" autocomplete="off" placeholder="">
-    <div class="codigo-error" id="codigo-error"></div>
-    <button id="codigo-submit" onclick="validarCodigo()">Participar</button>
   </div>
 
   <div id="scratch-section">
-    <p class="hint">Desliza el dedo para raspar y descubrir tu premio</p>
+    <p class="hint">Desliza el dedo para raspar y descubrir cuantos numeros ganaste</p>
     <div class="scratch-area">
       <div id="prize-display">
         <div class="prize-name" id="pName">RASPA PARA DESCUBRIR</div>
@@ -113,36 +115,34 @@
   <div id="loading-section" style="display:none;">
     <div class="loading-section">
       <div class="spinner"></div>
-      <p>Verificando tu premio...</p>
+      <p>Verificando tu jugada...</p>
     </div>
   </div>
   <div id="result-section">
     <h2 id="res-title"></h2>
-    <div class="code-box" id="res-code"></div>
     <p id="res-desc"></p>
-    <p id="res-aclaracion" class="aclaracion"></p>
-    <div id="aviso-camiseta" class="aviso-camiseta" style="display:none;">
-      IMPORTANTE: Si te retiras de la estacion sin canjear este premio, lo perderas.
-    </div>
+    <div class="code-box" id="res-code"></div>
+    <p class="aclaracion">Guarda este codigo de jugada.</p>
     <p id="res-timestamp" class="timestamp-sorteo"></p>
-    <div class="aviso-tiempo">
-      Tenés <strong>10 minutos</strong> para solicitar al vendedor de playa la entrega o validación del premio.<br>
-      Fuera de ese tiempo el premio se pierde.<br>
-      <strong>NO te vayas de la estación sin tu premio</strong> porque el código se anula y no se puede canjear después de ese tiempo.
+    <div id="rifa-codigo2" class="rifa-box" style="display:none;">
+      <p class="rifa-paso">Ingresa el codigo de 6 digitos del sticker que te dio el vendedor para habilitar tus numeros:</p>
+      <input type="tel" id="codigo2-input" maxlength="6" autocomplete="off" placeholder="______">
+      <div class="codigo-error" id="codigo2-error"></div>
+      <button id="codigo2-submit" onclick="validarCodigo2()">Validar codigo</button>
     </div>
     <div id="whatsapp-section">
-      <p class="whatsapp-label">Queres recibir este resultado por WhatsApp?</p>
-      <a id="btn-whatsapp" href="#" target="_blank" class="btn-whatsapp" onclick="confirmarPorWhatsapp()">Confirmar por WhatsApp</a>
+      <p class="whatsapp-label" id="whatsapp-label">Recibi tus numeros por WhatsApp</p>
+      <a id="btn-whatsapp" href="#" target="_blank" class="btn-whatsapp" onclick="confirmarPorWhatsapp()">Recibir mis numeros por WhatsApp</a>
       <p class="whatsapp-nota">Se abre WhatsApp con un mensaje ya escrito. Solo toca enviar.</p>
       <p id="whatsapp-confirmado">Listo. Revisa tu WhatsApp en unos segundos.</p>
     </div>
   </div>
   <div id="error-section">
-    <h3>No pudimos confirmar tu premio</h3>
+    <h3>No pudimos confirmar tu jugada</h3>
     <p>Hubo un problema de conexion. Tu jugada todavia no se registro, asi que no la perdiste. Toca el boton para reintentar.</p>
     <button id="retry-btn" onclick="enviarAlServidor()">Reintentar</button>
   </div>
-  <div class="footer">Promocion valida del 24 al 30 de septiembre 2026 - Solo con carga de Infinia</div>
+  <div class="footer">Una persona = una participacion por carga. Limites diarios por categoria. Sorteo sujeto a bases y condiciones.</div>
 </div>
 <script>
 var VENDEDOR = "BENETTI ABRIL";
@@ -152,64 +152,69 @@ var WHATSAPP_NUMERO = "5491124809870";
 var revealed = false;
 var DEVICE_ID_KEY = 'raspadita_device_id';
 function obtenerDeviceId() {
-  var id = localStorage.getItem(DEVICE_ID_KEY);
-  if (!id) {
-    id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 12));
-    localStorage.setItem(DEVICE_ID_KEY, id);
+  try {
+    var id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id) {
+      id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 12));
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+    return id;
+  } catch (e) {
+    return 'dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 12);
   }
-  return id;
 }
 var DEVICE_ID = obtenerDeviceId();
-var STORAGE_KEY = 'raspadita_gnc_BENETTI_ABRIL_jugado';
-var hoyStr = new Date().toISOString().split('T')[0];
-var ultimaJugada = localStorage.getItem(STORAGE_KEY);
 
+var PREFIJOS = ["IN","ID","NS","DI","GN","FU"];
+var LIQUIDOS = ["IN","ID","NS","DI"];
+// Importes minimos (la validacion real la hace el servidor)
+var MINIMO_FIJO = { GN: 7000, FU: 3000 };
+var MINIMO_LIQUIDO = { moto: 5000, auto: 25000 };
 var VEHICULO_ELEGIDO = null;
+var CODIGO_TEXTO = null;
+var PRODUCTO_CODIGO = null;
 var IMPORTE_INGRESADO = null;
-var MINIMOS = { moto: 5000, auto: 20000 };
-var DIGITOS = { moto: 5, auto: 6 };
+var CODIGO_ACTUAL = null;
 
-if (ultimaJugada === hoyStr) {
-  document.getElementById('vehiculo-section').style.display = 'none';
-  document.getElementById('bloqueado-section').style.display = 'block';
+function mostrarErrorCodigo(msg) {
+  var e = document.getElementById('codigo-error');
+  e.textContent = msg; e.style.display = 'block';
+}
+function formatoPesos(n) { return '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+
+function validarCodigo() {
+  var valor = document.getElementById('codigo-input').value.trim().toUpperCase().replace(/\s+/g, '');
+  var m = /^([A-Z]{2})([0-9]+)$/.exec(valor);
+  if (!m) { mostrarErrorCodigo('El codigo debe tener 2 letras seguidas del importe. Ej: GN15000.'); return; }
+  if (PREFIJOS.indexOf(m[1]) === -1) { mostrarErrorCodigo('Las 2 letras del codigo no son validas. Revisa el ticket o consulta con el vendedor.'); return; }
+  if (m[2].length > 7) { mostrarErrorCodigo('El importe del codigo no es valido.'); return; }
+  document.getElementById('codigo-error').style.display = 'none';
+  CODIGO_TEXTO = valor;
+  PRODUCTO_CODIGO = m[1];
+  IMPORTE_INGRESADO = parseInt(m[2], 10);
+  if (LIQUIDOS.indexOf(PRODUCTO_CODIGO) !== -1 && !VEHICULO_ELEGIDO) {
+    document.getElementById('codigo-section').style.display = 'none';
+    document.getElementById('vehiculo-section').style.display = 'block';
+    return;
+  }
+  continuarJugada();
 }
 
 function elegirVehiculo(tipo) {
   VEHICULO_ELEGIDO = tipo;
   document.getElementById('vehiculo-section').style.display = 'none';
-  document.getElementById('codigo-input').maxLength = DIGITOS[tipo];
-  document.getElementById('codigo-input').value = '';
-  document.getElementById('codigo-error').style.display = 'none';
   document.getElementById('codigo-section').style.display = 'block';
-  document.getElementById('codigo-input').focus();
+  continuarJugada();
 }
 
-function validarCodigo() {
-  var valor = document.getElementById('codigo-input').value.trim();
-  var digitosEsperados = DIGITOS[VEHICULO_ELEGIDO];
-  var errorBox = document.getElementById('codigo-error');
-
-  if (!/^[0-9]+$/.test(valor) || valor.length === 0) {
-    errorBox.textContent = 'Ingresa solo numeros.';
-    errorBox.style.display = 'block';
+function continuarJugada() {
+  var minimo = (LIQUIDOS.indexOf(PRODUCTO_CODIGO) !== -1) ? MINIMO_LIQUIDO[VEHICULO_ELEGIDO] : MINIMO_FIJO[PRODUCTO_CODIGO];
+  if (IMPORTE_INGRESADO < minimo) {
+    VEHICULO_ELEGIDO = null;
+    mostrarErrorCodigo('Este codigo no alcanza el importe minimo (' + formatoPesos(minimo) + ') para participar.');
+    document.getElementById('codigo-section').style.display = 'block';
     return;
   }
-  if (valor.length > digitosEsperados) {
-    errorBox.textContent = 'El codigo no puede tener mas de ' + digitosEsperados + ' numeros.';
-    errorBox.style.display = 'block';
-    return;
-  }
-
-  var importe = parseInt(valor, 10);
-  var minimo = MINIMOS[VEHICULO_ELEGIDO];
-  if (importe < minimo) {
-    errorBox.textContent = 'Este codigo no puede participar.';
-    errorBox.style.display = 'block';
-    return;
-  }
-
-  errorBox.style.display = 'none';
-  IMPORTE_INGRESADO = importe;
   document.getElementById('codigo-section').style.display = 'none';
   document.getElementById('scratch-section').style.display = 'block';
   initScratch();
@@ -225,7 +230,7 @@ function initScratch() {
   ctx.fillStyle = g; ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.font = 'bold 18px Arial'; ctx.textAlign = 'center';
   ctx.fillText('RASPA AQUI', canvas.width/2, canvas.height/2-8);
-  ctx.fillText('DESCUBRI TU PREMIO', canvas.width/2, canvas.height/2+20);
+  ctx.fillText('DESCUBRI TUS NUMEROS', canvas.width/2, canvas.height/2+20);
   ctx.globalCompositeOperation = 'destination-out';
   var painting = false;
   function getPos(e) { var rect=canvas.getBoundingClientRect(); var src=e.touches?e.touches[0]:e; return {x:src.clientX-rect.left,y:src.clientY-rect.top}; }
@@ -245,6 +250,25 @@ function checkReveal(ctx, canvas) {
   if(t/(canvas.width*canvas.height)>0.10){revealed=true;canvas.style.display='none';enviarAlServidor();}
 }
 
+var MENSAJES_ERROR = {
+  codigo_invalido: ['Codigo no valido', 'Revisa que sean 2 letras + el importe del ticket. Si seguis con problemas, consulta con el vendedor de playa.'],
+  producto_invalido: ['Producto no valido', 'Las 2 letras del codigo no corresponden a un producto del sorteo. Consulta con el vendedor de playa.'],
+  minimo_no_alcanzado: ['Importe insuficiente', 'Este codigo no alcanza el importe minimo para participar.'],
+  vehiculo_invalido: ['No pudimos procesar tu codigo', 'Consulta con el vendedor de playa.'],
+  limite_diario_alcanzado: ['Ya usaste tus cargas de hoy', 'Alcanzaste el maximo de participaciones de hoy para este tipo de producto. Volve manana.'],
+  esperar_entre_cargas: ['Todavia no podes participar', 'Espera 2 horas desde tu ultima carga de este tipo para volver a participar.'],
+  bloqueado: ['Participacion en revision', 'Hemos detectado irregularidades en el proceso de participacion de este sorteo. Pedi hablar con el encargado de la estacion para gestionar la habilitacion.']
+};
+function mostrarError(status) {
+  var m = MENSAJES_ERROR[status] || ['No pudimos procesar tu codigo', 'Consulta con el vendedor de playa. (' + status + ')'];
+  document.getElementById('loading-section').style.display='none';
+  var es = document.getElementById('error-section');
+  es.querySelector('h3').textContent=m[0];
+  es.querySelector('p').textContent=m[1];
+  document.getElementById('retry-btn').style.display='none';
+  es.style.display='block';
+}
+
 function enviarAlServidor() {
   document.getElementById('scratch-section').style.display='none';
   document.getElementById('error-section').style.display='none';
@@ -255,75 +279,75 @@ function enviarAlServidor() {
     estacion:ESTACION,
     deviceId:DEVICE_ID,
     tipo_vehiculo:VEHICULO_ELEGIDO,
-    importe:IMPORTE_INGRESADO
+    importe:CODIGO_TEXTO
   })})
     .then(function(r){return r.json();})
     .then(function(data){
       if(!data){throw new Error('respuesta vacia');}
-      if(data.status==='minimo_no_alcanzado' || data.status==='vehiculo_invalido' || data.status==='codigo_invalido'){
-        document.getElementById('loading-section').style.display='none';
-        document.getElementById('error-section').querySelector('h3').textContent='No pudimos procesar tu codigo';
-        document.getElementById('error-section').querySelector('p').textContent='El codigo ingresado no es valido. Consulta con el vendedor de playa.';
-        document.getElementById('retry-btn').style.display='none';
-        document.getElementById('error-section').style.display='block';
-        return;
-      }
-      if(!data.premio || !data.codigo){throw new Error('respuesta incompleta');}
-      localStorage.setItem(STORAGE_KEY,hoyStr);
-      mostrarResultado(data.premio, data.codigo);
+      if(data.status && data.status!=='ok'){ mostrarError(data.status); return; }
+      if(!data.codigo || !(Number(data.numeros_rifa) > 0)){throw new Error('respuesta incompleta: ' + JSON.stringify(data));}
+      mostrarResultado(data.codigo, Number(data.numeros_rifa), data.requiere_codigo2);
     })
-    .catch(function(){
+    .catch(function(err){
+      if (window.console) console.error('Raspadita error:', err);
       document.getElementById('loading-section').style.display='none';
       document.getElementById('retry-btn').style.display='block';
-      document.getElementById('error-section').querySelector('h3').textContent='No pudimos confirmar tu premio';
-      document.getElementById('error-section').querySelector('p').textContent='Hubo un problema de conexion. Tu jugada todavia no se registro, asi que no la perdiste. Toca el boton para reintentar.';
-      document.getElementById('error-section').style.display='block';
+      var es = document.getElementById('error-section');
+      es.querySelector('h3').textContent='No pudimos confirmar tu jugada';
+      es.querySelector('p').textContent='Hubo un problema de conexion. Tu jugada todavia no se registro, asi que no la perdiste. Toca el boton para reintentar.';
+      es.style.display='block';
     });
 }
 
-var DESCRIPCIONES_PREMIO = {
-  'REMERA COLAPINTO': {desc:'Remera Colapinto de regalo. Retira en la estacion con este codigo.', aclaracion:''},
-  '4 LITROS ELAION SINTETICO': {desc:'4 litros de aceite sintetico Elaion para tu vehiculo. Retira en la estacion con este codigo.', aclaracion:'Elegi tu variante en la estacion: Elaion F50 Plus 5W-40, Elaion F50 D2 5W-30, Elaion F50 F 5W-30 o Elaion F50 J 0W-20 (4 L). Sujeto a stock disponible de cada variante.'},
-  'ELAION MOTO 4T 10W-50': {desc:'1 litro de Elaion Moto 4T 10W-50. Retira en la estacion con este codigo.', aclaracion:''},
-  'ELAION MOTO TRANSMISION 80W': {desc:'0,5 litros de Elaion Moto Transmision SAE 80W. Retira en la estacion con este codigo.', aclaracion:''},
-  '50% OFF ELAION': {desc:'50% de descuento en toda la linea Elaion, ROD, Kriox y liquido de frenos, en sus diferentes envases.', aclaracion:'No acumulable con otros cupones de descuento.'},
-  '30% OFF ELAION': {desc:'30% de descuento en toda la linea Elaion, ROD, Kriox y liquido de frenos, en sus diferentes envases.', aclaracion:'No acumulable con otros cupones de descuento.'},
-  '10% OFF INFINIA': {desc:'10% de descuento en tu proxima carga de Infinia.', aclaracion:'No acumulable con otros cupones de descuento.'},
-  '10 LITROS INFINIA GRATIS': {desc:'10 litros de Infinia gratis en tu proxima compra. Mostra este codigo al cajero.', aclaracion:''},
-  'CUBRE CASCO': {desc:'Cubre casco de regalo. Retira en la estacion con este codigo.', aclaracion:''}
-};
-var DESCRIPCION_DEFAULT = {desc:'20% de descuento en toda la linea Elaion, ROD, Kriox y liquido de frenos, en sus diferentes envases.', aclaracion:'No acumulable con otros cupones de descuento.'};
-
-// Estos premios no vencen a los 20 minutos: se pueden canjear cualquier dia
-// hasta el 10 de octubre, mostrando esta misma pantalla/codigo en el mostrador.
-var PREMIOS_PLAZO_LARGO = ['20% OFF ELAION', '30% OFF ELAION', '50% OFF ELAION', '10% OFF INFINIA'];
-
-var CODIGO_ACTUAL = null;
-
-function mostrarResultado(premioFinal, codigo) {
+function mostrarResultado(codigo, cant, requiereCodigo2) {
   document.getElementById('loading-section').style.display='none';
-  var rs=document.getElementById('result-section'); rs.style.display='block';
-  document.getElementById('res-title').textContent='GANASTE '+premioFinal+'!';
-  document.getElementById('res-code').textContent=codigo;
-  var info = DESCRIPCIONES_PREMIO[premioFinal] || DESCRIPCION_DEFAULT;
-  document.getElementById('res-desc').textContent=info.desc;
-  document.getElementById('res-aclaracion').textContent=info.aclaracion;
-  var ahoraSorteo = new Date();
-  var opcionesFecha = {timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false};
-  var fechaHoraStr = ahoraSorteo.toLocaleString('es-AR', opcionesFecha);
-  document.getElementById('res-timestamp').textContent = 'Premio obtenido: ' + fechaHoraStr;
-
-  var avisoTiempo = document.querySelector('.aviso-tiempo');
-  if (PREMIOS_PLAZO_LARGO.indexOf(premioFinal) !== -1) {
-    avisoTiempo.innerHTML = 'Podés canjear este premio <strong>en cualquier momento hasta el 10 de octubre</strong>.<br>Mostrá esta misma pantalla o tu código en el mostrador el día que quieras usarlo.';
-  } else {
-    avisoTiempo.innerHTML = 'Tenés <strong>10 minutos</strong> para solicitar al vendedor de playa la entrega o validación del premio.<br>Fuera de ese tiempo el premio se pierde.<br><strong>NO te vayas de la estación sin tu premio</strong> porque el código se anula y no se puede canjear después de ese tiempo.';
-  }
+  document.getElementById('result-section').style.display='block';
+  document.getElementById('res-title').textContent = 'GANASTE ' + cant + ' NUMERO' + (cant > 1 ? 'S' : '') + '!';
+  document.getElementById('res-desc').textContent = 'Participas del sorteo de la moto con ' + cant + ' numero' + (cant > 1 ? 's' : '') + '. Te los enviamos por WhatsApp.';
+  document.getElementById('res-code').textContent = codigo;
+  var fh = new Date().toLocaleString('es-AR', {timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  document.getElementById('res-timestamp').textContent = 'Jugada: ' + fh;
 
   CODIGO_ACTUAL = codigo;
-  var mensaje = 'Hola, quiero confirmar mi premio de la Raspadita GNC Escobar. Mi codigo es ' + codigo;
-  var link = 'https://wa.me/' + WHATSAPP_NUMERO + '?text=' + encodeURIComponent(mensaje);
-  document.getElementById('btn-whatsapp').setAttribute('href', link);
+  var mensaje = 'Hola, quiero recibir mis numeros del sorteo de la moto de GNC Escobar. Mi codigo es ' + codigo;
+  var btn = document.getElementById('btn-whatsapp');
+  btn.setAttribute('href', 'https://wa.me/' + WHATSAPP_NUMERO + '?text=' + encodeURIComponent(mensaje));
+
+  if (requiereCodigo2) {
+    document.getElementById('rifa-codigo2').style.display = 'block';
+    btn.classList.add('deshabilitado');
+    document.getElementById('whatsapp-label').textContent = 'Primero valida el codigo del sticker, despues pedi tus numeros';
+  }
+}
+
+function validarCodigo2() {
+  var v = document.getElementById('codigo2-input').value.trim();
+  var err = document.getElementById('codigo2-error');
+  if (!/^[0-9]{6}$/.test(v)) { err.textContent = 'El codigo del sticker tiene 6 numeros.'; err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  var b = document.getElementById('codigo2-submit');
+  b.disabled = true; b.textContent = 'Validando...';
+  fetch(WEBHOOK, {method:'POST', body: JSON.stringify({
+    accion: 'validar_codigo_rifa', jugada_codigo: CODIGO_ACTUAL, codigo_rifa: v, deviceId: DEVICE_ID
+  })})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      b.disabled = false; b.textContent = 'Validar codigo';
+      if (d && d.status === 'ok') {
+        document.getElementById('rifa-codigo2').style.display = 'none';
+        document.getElementById('btn-whatsapp').classList.remove('deshabilitado');
+        document.getElementById('whatsapp-label').textContent = 'Codigo validado. Toca el boton para recibir tus numeros por WhatsApp.';
+        return;
+      }
+      var msg = 'No pudimos validar el codigo. Revisalo e intenta de nuevo.';
+      if (d && d.status === 'bloqueado') msg = MENSAJES_ERROR.bloqueado[1];
+      if (d && d.status === 'jugada_no_encontrada') msg = 'No encontramos tu jugada. Consulta con el vendedor de playa.';
+      err.textContent = msg; err.style.display = 'block';
+    })
+    .catch(function(){
+      b.disabled = false; b.textContent = 'Validar codigo';
+      err.textContent = 'Problema de conexion. Intenta de nuevo.'; err.style.display = 'block';
+    });
 }
 
 function confirmarPorWhatsapp() {
