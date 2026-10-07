@@ -165,8 +165,8 @@ function obtenerDeviceId() {
 }
 var DEVICE_ID = obtenerDeviceId();
 
-var PREFIJOS = ["IN","ID","NS","DI","GN","FU"];
-var LIQUIDOS = ["IN","ID","NS","DI"];
+var PREFIJOS = ["IN","ID","NS","DI","D5","GN","FU"];
+var LIQUIDOS = ["IN","ID","NS","DI","D5"];
 // Importes minimos (la validacion real la hace el servidor)
 var MINIMO_FIJO = { GN: 7000, FU: 3000 };
 var MINIMO_LIQUIDO = { moto: 5000, auto: 25000 };
@@ -184,7 +184,7 @@ function formatoPesos(n) { return '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/
 
 function validarCodigo() {
   var valor = document.getElementById('codigo-input').value.trim().toUpperCase().replace(/\s+/g, '');
-  var m = /^([A-Z]{2})([0-9]+)$/.exec(valor);
+  var m = /^([A-Z][A-Z0-9])([0-9]+)$/.exec(valor);
   if (!m) { mostrarErrorCodigo('El codigo debe tener 2 letras seguidas del importe. Ej: GN15000.'); return; }
   if (PREFIJOS.indexOf(m[1]) === -1) { mostrarErrorCodigo('Las 2 letras del codigo no son validas. Revisa el ticket o consulta con el vendedor.'); return; }
   if (m[2].length > 7) { mostrarErrorCodigo('El importe del codigo no es valido.'); return; }
