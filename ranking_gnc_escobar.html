@@ -95,7 +95,7 @@
       <div id="ranking-lista"><div class="loading">Cargando datos...</div></div>
     </div>
     <div class="ultima-act" id="ultima-act"></div>
-    <button class="btn btn-blue" onclick="cargarRanking(1)">ACTUALIZAR</button>
+    <button class="btn btn-blue" onclick="cargarRanking()">ACTUALIZAR</button>
     <button class="btn btn-green" onclick="descargarImagen()">DESCARGAR PARA WHATSAPP</button>
   </div>
 </div>
@@ -131,55 +131,28 @@ function setFiltro(f) {
   renderRanking();
 }
 
-// Convierte la fecha que manda el servidor (fecha completa en UTC, ej. "2026-09-25T18:11:07.000Z")
-// a "aaaa-mm-dd" en hora Argentina, que es el formato de los filtros HOY / POR DIA / RANGO.
-function normalizarFecha(f) {
-  if (!f) return '';
-  var s = String(f);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  var d = new Date(s);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('en-CA', {timeZone: 'America/Argentina/Buenos_Aires'});
-}
-
-var cargando = false;
-function cargarRanking(intento) {
-  intento = intento || 1;
-  if (cargando && intento === 1) return;
-  cargando = true;
-  document.getElementById('ranking-lista').innerHTML = '<div class="loading">Cargando datos...' + (intento > 1 ? ' (reintentando)' : '') + '</div>';
-  var ctrl = window.AbortController ? new AbortController() : null;
-  var timer = setTimeout(function() { if (ctrl) ctrl.abort(); }, 30000);
-  fetch(WEBHOOK, {method:'POST', body:JSON.stringify({accion:'ranking', password:PASSWORD}), signal: ctrl ? ctrl.signal : undefined})
+function cargarRanking() {
+  document.getElementById('ranking-lista').innerHTML = '<div class="loading">Cargando datos...</div>';
+  fetch(WEBHOOK, {method:'POST', body:JSON.stringify({accion:'ranking', password:PASSWORD})})
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      clearTimeout(timer);
       if (data.status === 'ok') {
-        cargando = false;
-        todosLosDatos = (data.registros || []).map(function(r) {
-          return { fecha: normalizarFecha(r.fecha), vendedor: r.vendedor, premio: r.premio, n: Number(r.n) || 1 };
-        }).filter(function(r) { return r.fecha && r.vendedor; });
+        todosLosDatos = data.registros;
         renderRanking();
-        document.getElementById('ultima-act').textContent = 'Ultima actualizacion: ' + new Date().toLocaleTimeString('es-AR', {timeZone: 'America/Argentina/Buenos_Aires'});
+        document.getElementById('ultima-act').textContent = 'Ultima actualizacion: ' + new Date().toLocaleTimeString('es-AR');
       } else {
-        throw new Error(data.mensaje || data.status || 'error');
+        document.getElementById('ranking-lista').innerHTML = '<div class="loading">Error al cargar datos.</div>';
       }
     })
-    .catch(function(err) {
-      clearTimeout(timer);
-      if (intento < 2) { setTimeout(function() { cargarRanking(intento + 1); }, 2000); return; }
-      cargando = false;
-      var msg = (err && err.name === 'AbortError') ? 'El servidor tardo demasiado en responder.' : 'Error al cargar datos.';
-      document.getElementById('ranking-lista').innerHTML = '<div class="loading">' + msg + ' Toca ACTUALIZAR para reintentar.</div>';
-    });
+    .catch(function() { document.getElementById('ranking-lista').innerHTML = '<div class="loading">Error de conexion.</div>'; });
 }
 
 function renderRanking() {
-  // Fecha de hoy en hora Argentina (toISOString usa UTC y rompia el filtro HOY)
-  var hoyStr = new Date().toLocaleDateString('en-CA', {timeZone: 'America/Argentina/Buenos_Aires'});
-  var hoyUTC = new Date(hoyStr + 'T12:00:00Z');
-  hoyUTC.setUTCDate(hoyUTC.getUTCDate() - ((hoyUTC.getUTCDay() + 6) % 7));
-  var inicioSemanaStr = hoyUTC.toISOString().split('T')[0];
+  var hoy = new Date();
+  var hoyStr = hoy.toISOString().split('T')[0];
+  var inicioSemana = new Date(hoy);
+  inicioSemana.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
+  var inicioSemanaStr = inicioSemana.toISOString().split('T')[0];
   var diaEspecifico = document.getElementById('inp-fecha').value;
   var rangoDesde = document.getElementById('inp-rango-desde').value;
   var rangoHasta = document.getElementById('inp-rango-hasta').value;
@@ -190,16 +163,11 @@ function renderRanking() {
     if (filtroActual === 'dia') return diaEspecifico ? r.fecha === diaEspecifico : false;
     if (filtroActual === 'rango') {
       if (!rangoDesde || !rangoHasta) return false;
-      var d1 = rangoDesde < rangoHasta ? rangoDesde : rangoHasta, d2 = rangoDesde < rangoHasta ? rangoHasta : rangoDesde;
-      return r.fecha >= d1 && r.fecha <= d2;
+      return r.fecha >= rangoDesde && r.fecha <= rangoHasta;
     }
     return true;
   });
 
-  if (filtroActual === 'dia' && !diaEspecifico) {
-    document.getElementById('ranking-lista').innerHTML = '<div class="loading">Elegi una fecha.</div>';
-    return;
-  }
   if (filtroActual === 'rango' && (!rangoDesde || !rangoHasta)) {
     document.getElementById('ranking-lista').innerHTML = '<div class="loading">Elegi la fecha desde y hasta.</div>';
     return;
@@ -216,11 +184,10 @@ function renderRanking() {
   var lista = Object.keys(porVendedor).map(function(v) {
     var registros = porVendedor[v];
     var porDia = {};
-    var total = 0;
-    registros.forEach(function(r) { porDia[r.fecha] = (porDia[r.fecha] || 0) + r.n; total += r.n; });
+    registros.forEach(function(r) { porDia[r.fecha] = (porDia[r.fecha] || 0) + 1; });
     var diasValidos = 0;
     Object.keys(porDia).forEach(function(d) { if (porDia[d] >= UMBRAL_DIA_VALIDO) diasValidos++; });
-    return { vendedor: v, cantidad: total, dias: diasValidos };
+    return { vendedor: v, cantidad: registros.length, dias: diasValidos };
   }).sort(function(a, b) { return b.cantidad - a.cantidad; });
 
   if (lista.length === 0) {
@@ -247,14 +214,14 @@ function renderRanking() {
 
 function descargarImagen() {
   var rangoTexto = (document.getElementById('inp-rango-desde').value || '?') + ' a ' + (document.getElementById('inp-rango-hasta').value || '?');
-  var subtitulos = {hoy:'Hoy - '+new Date().toLocaleDateString('es-AR', {timeZone: 'America/Argentina/Buenos_Aires'}), semana:'Esta semana', total:'Total promocion', dia:document.getElementById('inp-fecha').value || 'Dia seleccionado', rango:rangoTexto};
+  var subtitulos = {hoy:'Hoy - '+new Date().toLocaleDateString('es-AR'), semana:'Esta semana', total:'Total promocion', dia:document.getElementById('inp-fecha').value || 'Dia seleccionado', rango:rangoTexto};
   document.getElementById('export-header').style.display = 'block';
   document.getElementById('export-subtitulo').textContent = subtitulos[filtroActual];
   var el = document.getElementById('ranking-exportable');
   html2canvas(el, {backgroundColor:'#ffffff', scale:2}).then(function(canvas) {
     document.getElementById('export-header').style.display = 'none';
     var link = document.createElement('a');
-    link.download = 'ranking_gnc_escobar_' + new Date().toLocaleDateString('es-AR', {timeZone: 'America/Argentina/Buenos_Aires'}).replace(/\//g,'-') + '.png';
+    link.download = 'ranking_gnc_escobar_' + new Date().toLocaleDateString('es-AR').replace(/\//g,'-') + '.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
   });
