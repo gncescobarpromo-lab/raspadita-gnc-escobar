@@ -137,6 +137,11 @@
       <p id="whatsapp-confirmado">Listo. Revisa tu WhatsApp en unos segundos.</p>
     </div>
   </div>
+  <div id="terminada-section" style="display:none; text-align:center; padding:24px 8px;">
+    <h2 style="color:#1a7a3c; margin:0 0 10px;">YA RECIBISTE TUS NUMEROS</h2>
+    <p style="font-size:0.95rem; color:#333; margin:0 0 8px;">Tu jugada terminó. Revisá tu WhatsApp: ahí están tus números para el sorteo.</p>
+    <p style="font-size:0.82rem; color:#666; margin:0;">Para volver a participar necesitás una nueva carga.</p>
+  </div>
   <div id="error-section">
     <h3>No pudimos confirmar tu jugada</h3>
     <p>Hubo un problema de conexion. Tu jugada todavia no se registro, asi que no la perdiste. Toca el boton para reintentar.</p>
@@ -257,6 +262,7 @@ var MENSAJES_ERROR = {
   vehiculo_invalido: ['No pudimos procesar tu codigo', 'Consulta con el vendedor de playa.'],
   limite_diario_alcanzado: ['Ya usaste tus cargas de hoy', 'Alcanzaste el maximo de participaciones de hoy para este tipo de producto. Volve manana.'],
   esperar_entre_cargas: ['Todavia no podes participar', 'Espera 2 horas desde tu ultima carga de este tipo para volver a participar.'],
+  bloqueado_dia: ['Sistema bloqueado por hoy', 'Por reiterados intentos fallidos al ingresar el codigo, el sistema quedo bloqueado para este dispositivo por el resto del dia. Volve a intentar manana.'],
   bloqueado: ['Participacion en revision', 'Hemos detectado irregularidades en el proceso de participacion de este sorteo. Pedi hablar con el encargado de la estacion para gestionar la habilitacion.']
 };
 function mostrarError(status) {
@@ -341,6 +347,11 @@ function validarCodigo2() {
       }
       var msg = 'No pudimos validar el codigo. Revisalo e intenta de nuevo.';
       if (d && d.status === 'bloqueado') msg = MENSAJES_ERROR.bloqueado[1];
+      if (d && d.status === 'bloqueado_dia') {
+        msg = MENSAJES_ERROR.bloqueado_dia[1];
+        document.getElementById('codigo2-input').disabled = true;
+        b.disabled = true;
+      }
       if (d && d.status === 'jugada_no_encontrada') msg = 'No encontramos tu jugada. Consulta con el vendedor de playa.';
       err.textContent = msg; err.style.display = 'block';
     })
@@ -350,9 +361,22 @@ function validarCodigo2() {
     });
 }
 
+var JUGADA_TERMINADA = false;
+function mostrarJugadaTerminada() {
+  var ids = ['codigo-section','vehiculo-section','scratch-section','loading-section','result-section','error-section'];
+  for (var i = 0; i < ids.length; i++) { var el = document.getElementById(ids[i]); if (el) el.style.display = 'none'; }
+  document.getElementById('terminada-section').style.display = 'block';
+}
 function confirmarPorWhatsapp() {
   document.getElementById('whatsapp-confirmado').style.display = 'block';
+  // La jugada termina en el momento en que el cliente toca el boton: si vuelve
+  // atras o regresa a esta pagina, ya no puede repetirla (el servidor tambien
+  // ignora cualquier segundo mensaje con el mismo codigo de jugada).
+  JUGADA_TERMINADA = true;
+  setTimeout(mostrarJugadaTerminada, 400);
 }
+document.addEventListener('visibilitychange', function() { if (JUGADA_TERMINADA && !document.hidden) mostrarJugadaTerminada(); });
+window.addEventListener('pageshow', function() { if (JUGADA_TERMINADA) mostrarJugadaTerminada(); });
 </script>
 </body>
 </html>
