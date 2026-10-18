@@ -10,7 +10,7 @@
 <style>
   :root { --ypf-blue: #003DA5; --ypf-gold: #C8973A; --light-bg: #f0f4ff; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; background: var(--light-bg); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+  body { font-family: Arial, sans-serif; background: var(--light-bg); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px 20px 48px; }
   .header { background: var(--ypf-blue); width: 100%; max-width: 420px; border-radius: 16px 16px 0 0; padding: 18px; text-align: center; }
   .header h1 { font-size: 1.6rem; color: var(--ypf-gold); letter-spacing: 1px; }
   .header p { font-size: 1.2rem; font-weight: bold; color: #FFE08A; letter-spacing: 0.5px; line-height: 1.3; margin-top: 8px; }
@@ -86,6 +86,11 @@
   .campo-gap { margin-top: 14px; }
   #veh-inline .vehiculo-opciones { margin-bottom: 4px; }
   #veh-inline .vehiculo-btn { padding: 12px 8px; }
+  .veh-hint { text-align: center; font-size: 0.78rem; color: #a32d2d; font-weight: bold; margin-bottom: 8px; }
+  #veh-inline { border-radius: 12px; }
+  #veh-inline.pulso { animation: pulso 0.8s 2; }
+  @keyframes pulso { 0%, 100% { box-shadow: 0 0 0 0 rgba(200,151,58,0); } 50% { box-shadow: 0 0 0 6px rgba(200,151,58,0.55); } }
+  @media (prefers-reduced-motion: reduce) { #veh-inline.pulso { animation: none; outline: 3px solid var(--ypf-gold); } }
   .vehiculo-btn.sel { border-color: var(--ypf-blue); background: #e8eeff; box-shadow: inset 0 0 0 1px var(--ypf-blue); }
 </style>
 </head>
@@ -97,11 +102,12 @@
 <div class="card">
   <div id="codigo-section" style="display:block;">
     <p class="codigo-label">Ingresá tu compra</p>
-    <input type="text" id="codigo-input" maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="">
+    <input type="text" id="codigo-input" enterkeyhint="next" maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="">
     <p class="codigo-label campo-gap">Ingresá el código del sticker</p>
-    <input type="tel" id="sticker-input" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="">
+    <input type="tel" id="sticker-input" enterkeyhint="done" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="">
     <div id="veh-inline" style="display:none;">
       <p class="codigo-label campo-gap">¿Qué vehículo cargaste?</p>
+      <p class="veh-hint" id="veh-hint">Elegí una opción para continuar</p>
       <div class="vehiculo-opciones">
         <button type="button" class="vehiculo-btn" id="veh-moto" onclick="selVeh('moto')">
           <svg viewBox="0 0 24 24"><circle cx="5" cy="17" r="2.5"/><circle cx="19" cy="17" r="2.5"/><path d="M5 17h4l3-6h4l2 4h2M9 11l-2-4H4"/></svg>
@@ -211,7 +217,24 @@ function selVeh(tipo) {
   document.getElementById('veh-moto').classList.toggle('sel', tipo === 'moto');
   document.getElementById('veh-auto').classList.toggle('sel', tipo === 'auto');
   document.getElementById('codigo-error').style.display = 'none';
+  var h = document.getElementById('veh-hint'); if (h) h.style.display = 'none';
+  var sb = document.getElementById('codigo-submit');
+  setTimeout(function () { sb.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 120);
 }
+function esLiquido() { return /^(IN|ID|NS|DI|D5)/.test(document.getElementById('codigo-input').value.trim().toUpperCase()); }
+function irAlSiguiente() {
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  var falta = esLiquido() && !VEHICULO_ELEGIDO;
+  var target = document.getElementById(falta ? 'veh-inline' : 'codigo-submit');
+  setTimeout(function () { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
+  if (falta) {
+    var v = document.getElementById('veh-inline'); v.classList.add('pulso');
+    setTimeout(function () { v.classList.remove('pulso'); }, 1800);
+  }
+}
+document.getElementById('sticker-input').addEventListener('input', function () { if (/^[0-9]{6}$/.test(this.value)) irAlSiguiente(); });
+document.getElementById('sticker-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); if (/^[0-9]{6}$/.test(this.value) && !(esLiquido() && !VEHICULO_ELEGIDO)) validarCodigo(); else irAlSiguiente(); } });
+document.getElementById('codigo-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('sticker-input').focus(); } });
 function actualizarVeh() {
   var v = document.getElementById('codigo-input').value.trim().toUpperCase();
   var liq = /^(IN|ID|NS|DI|D5)/.test(v);
