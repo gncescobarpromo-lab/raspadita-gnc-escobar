@@ -98,6 +98,8 @@
   <div id="codigo-section" style="display:block;">
     <p class="codigo-label">Ingresá tu compra</p>
     <input type="text" id="codigo-input" maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="">
+    <p class="codigo-label campo-gap">Ingresá el código del sticker</p>
+    <input type="tel" id="sticker-input" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="">
     <div id="veh-inline" style="display:none;">
       <p class="codigo-label campo-gap">¿Qué vehículo cargaste?</p>
       <div class="vehiculo-opciones">
@@ -111,8 +113,6 @@
         </button>
       </div>
     </div>
-    <p class="codigo-label campo-gap">Ingresá el código del sticker</p>
-    <input type="tel" id="sticker-input" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="">
     <div class="codigo-error" id="codigo-error"></div>
     <button id="codigo-submit" onclick="validarCodigo()">Participar</button>
   </div>
