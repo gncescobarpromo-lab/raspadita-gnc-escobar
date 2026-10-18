@@ -84,6 +84,9 @@
   #whatsapp-label { display: none; margin: 12px 0 0; font-size: 0.95rem; color: #1a7a3c; }
   #sticker-input { width: 100%; font-size: 1.4rem; text-align: center; letter-spacing: 6px; padding: 12px; border: 2px solid #ddd; border-radius: 10px; margin-bottom: 8px; font-weight: bold; color: var(--ypf-blue); }
   .campo-gap { margin-top: 14px; }
+  #veh-inline .vehiculo-opciones { margin-bottom: 4px; }
+  #veh-inline .vehiculo-btn { padding: 12px 8px; }
+  .vehiculo-btn.sel { border-color: var(--ypf-blue); background: #e8eeff; box-shadow: inset 0 0 0 1px var(--ypf-blue); }
 </style>
 </head>
 <body>
@@ -95,24 +98,23 @@
   <div id="codigo-section" style="display:block;">
     <p class="codigo-label">Ingresá tu compra</p>
     <input type="text" id="codigo-input" maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="">
+    <div id="veh-inline" style="display:none;">
+      <p class="codigo-label campo-gap">¿Qué vehículo cargaste?</p>
+      <div class="vehiculo-opciones">
+        <button type="button" class="vehiculo-btn" id="veh-moto" onclick="selVeh('moto')">
+          <svg viewBox="0 0 24 24"><circle cx="5" cy="17" r="2.5"/><circle cx="19" cy="17" r="2.5"/><path d="M5 17h4l3-6h4l2 4h2M9 11l-2-4H4"/></svg>
+          <span>Moto</span>
+        </button>
+        <button type="button" class="vehiculo-btn" id="veh-auto" onclick="selVeh('auto')">
+          <svg viewBox="0 0 24 24"><path d="M3 16l1.5-5A2 2 0 0 1 6.4 9.5h11.2A2 2 0 0 1 19.5 11L21 16"/><rect x="2.5" y="16" width="19" height="3.5" rx="1"/><circle cx="7" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/></svg>
+          <span>Auto / Camión</span>
+        </button>
+      </div>
+    </div>
     <p class="codigo-label campo-gap">Ingresá el código del sticker</p>
     <input type="tel" id="sticker-input" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="">
     <div class="codigo-error" id="codigo-error"></div>
     <button id="codigo-submit" onclick="validarCodigo()">Participar</button>
-  </div>
-
-  <div id="vehiculo-section" style="display:none;">
-    <p class="vehiculo-pregunta">¿Qué vehículo cargaste?</p>
-    <div class="vehiculo-opciones">
-      <button type="button" class="vehiculo-btn" onclick="elegirVehiculo('moto')">
-        <svg viewBox="0 0 24 24"><circle cx="5" cy="17" r="2.5"/><circle cx="19" cy="17" r="2.5"/><path d="M5 17h4l3-6h4l2 4h2M9 11l-2-4H4"/></svg>
-        <span>Moto</span>
-      </button>
-      <button type="button" class="vehiculo-btn" onclick="elegirVehiculo('auto')">
-        <svg viewBox="0 0 24 24"><path d="M3 16l1.5-5A2 2 0 0 1 6.4 9.5h11.2A2 2 0 0 1 19.5 11L21 16"/><rect x="2.5" y="16" width="19" height="3.5" rx="1"/><circle cx="7" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/></svg>
-        <span>Auto / Camión</span>
-      </button>
-    </div>
   </div>
 
   <div id="loading-section" style="display:none;">
@@ -198,25 +200,28 @@ function validarCodigo() {
   CODIGO_TEXTO = valor;
   PRODUCTO_CODIGO = m[1];
   IMPORTE_INGRESADO = parseInt(m[2], 10);
-  if (LIQUIDOS.indexOf(PRODUCTO_CODIGO) !== -1 && !VEHICULO_ELEGIDO) {
-    document.getElementById('codigo-section').style.display = 'none';
-    document.getElementById('vehiculo-section').style.display = 'block';
-    return;
-  }
+  var esLiq = LIQUIDOS.indexOf(PRODUCTO_CODIGO) !== -1;
+  if (esLiq && !VEHICULO_ELEGIDO) { mostrarErrorCodigo('Elegí si cargaste una moto o un auto / camión.'); return; }
+  if (!esLiq) VEHICULO_ELEGIDO = null;
   continuarJugada();
 }
 
-function elegirVehiculo(tipo) {
+function selVeh(tipo) {
   VEHICULO_ELEGIDO = tipo;
-  document.getElementById('vehiculo-section').style.display = 'none';
-  document.getElementById('codigo-section').style.display = 'block';
-  continuarJugada();
+  document.getElementById('veh-moto').classList.toggle('sel', tipo === 'moto');
+  document.getElementById('veh-auto').classList.toggle('sel', tipo === 'auto');
+  document.getElementById('codigo-error').style.display = 'none';
 }
+function actualizarVeh() {
+  var v = document.getElementById('codigo-input').value.trim().toUpperCase();
+  var liq = /^(IN|ID|NS|DI|D5)/.test(v);
+  document.getElementById('veh-inline').style.display = liq ? 'block' : 'none';
+}
+document.getElementById('codigo-input').addEventListener('input', actualizarVeh);
 
 function continuarJugada() {
   var minimo = (LIQUIDOS.indexOf(PRODUCTO_CODIGO) !== -1) ? MINIMO_LIQUIDO[VEHICULO_ELEGIDO] : MINIMO_FIJO[PRODUCTO_CODIGO];
   if (IMPORTE_INGRESADO < minimo) {
-    VEHICULO_ELEGIDO = null;
     mostrarErrorCodigo('Este código no alcanza el importe mínimo (' + formatoPesos(minimo) + ') para participar.');
     document.getElementById('codigo-section').style.display = 'block';
     return;
