@@ -195,9 +195,13 @@ function formatoPesos(n) { return '$' + String(n).replace(/\B(?=(\d{3})+(?!\d))/
 
 function validarCodigo() {
   var valor = document.getElementById('codigo-input').value.trim().toUpperCase().replace(/\s+/g, '');
-  var m = /^([A-Z][A-Z0-9])([0-9]+)$/.exec(valor);
-  if (!m) { mostrarErrorCodigo('El código debe tener 2 letras seguidas del importe. Ej: GN15000.'); return; }
+  // GNC y Full no llevan importe: alcanza con GN / GNC / FU / FULL
+  if (valor === 'GNC') valor = 'GN';
+  if (valor === 'FULL') valor = 'FU';
+  var m = /^([A-Z][A-Z0-9])([0-9]*)$/.exec(valor);
+  if (!m) { mostrarErrorCodigo('Ingresá GNC, FULL, o 2 letras seguidas del importe. Ej: NS15000.'); return; }
   if (PREFIJOS.indexOf(m[1]) === -1) { mostrarErrorCodigo('Las 2 letras del código no son válidas. Revisá el ticket o consultá con el vendedor.'); return; }
+  if (m[2] === '' && LIQUIDOS.indexOf(m[1]) !== -1) { mostrarErrorCodigo('Para combustibles líquidos ingresá las 2 letras seguidas del importe. Ej: NS15000.'); return; }
   if (m[2].length > 7) { mostrarErrorCodigo('El importe del código no es válido.'); return; }
   var st = document.getElementById('sticker-input').value.trim();
   if (!/^[0-9]{6}$/.test(st)) { mostrarErrorCodigo('El código del sticker tiene 6 números.'); return; }
@@ -205,7 +209,7 @@ function validarCodigo() {
   STICKER_TEXTO = st;
   CODIGO_TEXTO = valor;
   PRODUCTO_CODIGO = m[1];
-  IMPORTE_INGRESADO = parseInt(m[2], 10);
+  IMPORTE_INGRESADO = (m[2] === '') ? 0 : parseInt(m[2], 10);
   var esLiq = LIQUIDOS.indexOf(PRODUCTO_CODIGO) !== -1;
   if (esLiq && !VEHICULO_ELEGIDO) { mostrarErrorCodigo('Elegí si cargaste una moto o un auto / camión.'); return; }
   if (!esLiq) VEHICULO_ELEGIDO = null;
@@ -243,7 +247,8 @@ function actualizarVeh() {
 document.getElementById('codigo-input').addEventListener('input', actualizarVeh);
 
 function continuarJugada() {
-  var minimo = (LIQUIDOS.indexOf(PRODUCTO_CODIGO) !== -1) ? MINIMO_LIQUIDO[VEHICULO_ELEGIDO] : MINIMO_FIJO[PRODUCTO_CODIGO];
+  // GNC y Full: sin importe minimo (no piden importe). Solo los liquidos lo validan.
+  var minimo = (LIQUIDOS.indexOf(PRODUCTO_CODIGO) !== -1) ? MINIMO_LIQUIDO[VEHICULO_ELEGIDO] : 0;
   if (IMPORTE_INGRESADO < minimo) {
     mostrarErrorCodigo('Este código no alcanza el importe mínimo (' + formatoPesos(minimo) + ') para participar.');
     document.getElementById('codigo-section').style.display = 'block';
@@ -254,7 +259,7 @@ function continuarJugada() {
 }
 
 var MENSAJES_ERROR = {
-  codigo_invalido: ['Código no válido', 'Revisá que sean 2 letras + el importe del ticket. Si seguís con problemas, consultá con el vendedor de playa.'],
+  codigo_invalido: ['Código no válido', 'Revisá el código: GNC o FULL, o 2 letras + el importe del ticket (combustibles líquidos). Si seguís con problemas, consultá con el vendedor de playa.'],
   producto_invalido: ['Producto no válido', 'Las 2 letras del código no corresponden a un producto del sorteo. Consultá con el vendedor de playa.'],
   minimo_no_alcanzado: ['Importe insuficiente', 'Este código no alcanza el importe mínimo para participar.'],
   vehiculo_invalido: ['No pudimos procesar tu código', 'Consultá con el vendedor de playa.'],
