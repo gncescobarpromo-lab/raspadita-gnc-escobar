@@ -116,6 +116,8 @@ var filtroActual = 'hoy';
 var todosLosDatos = [];
 var vistaActual = 'playa';
 // Promo de Infinia: cada jugada con Infinia (nafta o diesel) suma PUNTOS_INFINIA puntos en estas fechas (inclusive).
+// Nombres que se unifican en el ranking (nombre viejo : nombre nuevo). Ej: Sharon tomo el QR y los stickers de Benetti.
+var ALIAS = { 'BENETTI GALINDO ABRIL': 'MAIDANA SHARON' };
 var PROMO_DESDE = '2026-10-21';
 var PROMO_HASTA = '2026-10-24';
 var PUNTOS_INFINIA = 5; // 3 o mas raspaditas en un dia cuenta como 1 dia valido
@@ -207,6 +209,7 @@ function renderRanking() {
   // Agrupamos por vendedor.
   var porVendedor = {};
   filtrados.forEach(function(r) {
+    if (ALIAS[r.vendedor]) r = { fecha: r.fecha, vendedor: ALIAS[r.vendedor], cat: r.cat, n: r.n, ni: r.ni };
     if (!porVendedor[r.vendedor]) porVendedor[r.vendedor] = [];
     porVendedor[r.vendedor].push(r);
   });
