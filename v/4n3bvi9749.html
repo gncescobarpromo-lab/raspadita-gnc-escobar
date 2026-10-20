@@ -315,6 +315,8 @@ function mostrarResultado(codigo, cant, requiereCodigo2) {
   document.getElementById('res-timestamp').textContent = 'Jugada: ' + fh;
 
   CODIGO_ACTUAL = codigo;
+  CANT_ACTUAL = cant;
+  guardarJugada(codigo, cant, !requiereCodigo2);
   var mensaje = 'Hola, quiero recibir mis números del sorteo de la moto de GNC Escobar. Mi código es ' + codigo;
   var btn = document.getElementById('btn-whatsapp');
   btn.setAttribute('href', 'https://wa.me/' + WHATSAPP_NUMERO + '?text=' + encodeURIComponent(mensaje));
@@ -352,6 +354,7 @@ function validarCodigo2(auto) {
         document.getElementById('rifa-codigo2').style.display = 'none';
         document.getElementById('btn-whatsapp').classList.remove('deshabilitado');
         document.getElementById('whatsapp-label').style.display = 'block';
+        guardarJugada(CODIGO_ACTUAL, CANT_ACTUAL, true);
         return;
       }
       var msg = 'No pudimos validar el código. Revisalo e intentá de nuevo.';
@@ -376,21 +379,77 @@ function validarCodigo2(auto) {
     });
 }
 
+var JUGADA_KEY = 'raspadita_jugada_pendiente';
+var CANT_ACTUAL = 0;
 var JUGADA_TERMINADA = false;
+var TOCO_WHATSAPP = false;
+var POLL_TIMER = null;
+function guardarJugada(c, n, v) { try { localStorage.setItem(JUGADA_KEY, JSON.stringify({ c: c, n: n, v: !!v, t: Date.now() })); } catch (e) {} }
+function leerJugada() {
+  try {
+    var j = JSON.parse(localStorage.getItem(JUGADA_KEY) || 'null');
+    if (j && j.c && (Date.now() - j.t) < 12 * 3600 * 1000) return j;
+  } catch (e) {}
+  return null;
+}
+function borrarJugada() { try { localStorage.removeItem(JUGADA_KEY); } catch (e) {} }
+function consultarEstado(c, cb) {
+  fetch(WEBHOOK, { method: 'POST', body: JSON.stringify({ accion: 'estado_jugada', jugada_codigo: c, deviceId: DEVICE_ID }) })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { cb(d); })
+    .catch(function () { cb(null); });
+}
+function mostrarPrimeraPantalla() {
+  document.getElementById('loading-section').style.display = 'none';
+  document.getElementById('result-section').style.display = 'none';
+  document.getElementById('codigo-section').style.display = 'block';
+}
 function mostrarJugadaTerminada() {
   var ids = ['codigo-section','vehiculo-section','loading-section','result-section','error-section'];
   for (var i = 0; i < ids.length; i++) { var el = document.getElementById(ids[i]); if (el) el.style.display = 'none'; }
   document.getElementById('terminada-section').style.display = 'block';
 }
-function confirmarPorWhatsapp() {
-  // La jugada termina en el momento en que el cliente toca el boton: si vuelve
-  // atras o regresa a esta pagina, ya no puede repetirla (el servidor tambien
-  // ignora cualquier segundo mensaje con el mismo codigo de jugada).
-  JUGADA_TERMINADA = true;
-  setTimeout(mostrarJugadaTerminada, 150);
+// Si el cliente cerro la pagina o volvio atras ANTES de tocar el boton de WhatsApp,
+// al volver a entrar se retoma la jugada donde estaba (no se pierde ni se crea otra).
+function restaurarJugada() {
+  var j = leerJugada();
+  if (!j) return;
+  document.getElementById('codigo-section').style.display = 'none';
+  document.getElementById('loading-section').style.display = 'block';
+  consultarEstado(j.c, function (d) {
+    var validado = j.v, cant = j.n;
+    if (d && d.status === 'ok') {
+      if (d.asignado === 'SI' || d.asignado === 'BLOQUEADO') { borrarJugada(); mostrarPrimeraPantalla(); return; }
+      validado = (d.validado === true);
+      cant = Number(d.cantidad) || cant;
+    } else if (d && d.status) { borrarJugada(); mostrarPrimeraPantalla(); return; }
+    STICKER_TEXTO = null;
+    mostrarResultado(j.c, cant, !validado);
+  });
 }
-document.addEventListener('visibilitychange', function() { if (JUGADA_TERMINADA && !document.hidden) mostrarJugadaTerminada(); });
-window.addEventListener('pageshow', function() { if (JUGADA_TERMINADA) mostrarJugadaTerminada(); });
+function terminarSiAsignada(intentos) {
+  if (JUGADA_TERMINADA || !CODIGO_ACTUAL) return;
+  consultarEstado(CODIGO_ACTUAL, function (d) {
+    if (d && d.status === 'ok' && d.asignado === 'SI') { JUGADA_TERMINADA = true; borrarJugada(); mostrarJugadaTerminada(); return; }
+    if (intentos > 0) POLL_TIMER = setTimeout(function () { terminarSiAsignada(intentos - 1); }, 4000);
+  });
+}
+function confirmarPorWhatsapp() {
+  // Tocar el boton NO termina la jugada: si el cliente vuelve sin haber mandado el mensaje,
+  // puede tocar de nuevo. Se da por terminada recien cuando el servidor confirma que le
+  // asigno los numeros (el servidor ignora cualquier segundo mensaje con el mismo codigo).
+  TOCO_WHATSAPP = true;
+  clearTimeout(POLL_TIMER);
+  POLL_TIMER = setTimeout(function () { terminarSiAsignada(15); }, 5000);
+}
+function revisarAlVolver() {
+  if (!TOCO_WHATSAPP || JUGADA_TERMINADA || document.hidden) return;
+  clearTimeout(POLL_TIMER);
+  terminarSiAsignada(8);
+}
+document.addEventListener('visibilitychange', revisarAlVolver);
+window.addEventListener('pageshow', function () { if (JUGADA_TERMINADA) mostrarJugadaTerminada(); else revisarAlVolver(); });
+restaurarJugada();
 </script>
 </body>
 </html>
