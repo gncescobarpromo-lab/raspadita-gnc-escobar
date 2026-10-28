@@ -1,3 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking Vendedores - GNC Escobar</title>
+<style>
+  :root { --ypf-blue: #003DA5; --ypf-gold: #C8973A; --light-bg: #f0f4ff; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: var(--light-bg); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 10px; }
+  .header { background: var(--ypf-blue); width: 100%; max-width: 520px; border-radius: 16px 16px 0 0; padding: 18px; text-align: center; }
+  .header h1 { font-size: 1.4rem; color: var(--ypf-gold); }
+  .header p { font-size: 0.85rem; color: rgba(255,255,255,0.9); margin-top: 4px; }
+  .card { background: white; width: 100%; max-width: 520px; border-radius: 0 0 16px 16px; box-shadow: 0 8px 30px rgba(0,61,165,0.15); padding: 12px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 0.82rem; color: #444; font-weight: bold; margin-bottom: 4px; }
+  .form-group input { width: 100%; padding: 10px 14px; border: 2px solid #dde3f5; border-radius: 8px; font-size: 1rem; outline: none; }
+  .btn { width: 100%; padding: 13px; background: var(--ypf-gold); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 8px; }
+  .btn-blue { background: var(--ypf-blue); margin-top: 12px; }
+  .btn-green { background: #27ae60; margin-top: 12px; }
+  .filtros { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .filtro-btn { flex: 1; min-width: 70px; padding: 8px; border: 2px solid #dde3f5; border-radius: 8px; background: white; font-size: 0.82rem; font-weight: bold; cursor: pointer; color: #444; }
+  .filtro-btn.activo { background: var(--ypf-blue); color: white; border-color: var(--ypf-blue); }
+  .filtros.sector .filtro-btn { padding: 6px; font-size: 0.75rem; }
+  .fecha-picker { display: none; margin-bottom: 12px; }
+  .fecha-picker input[type=date] { width: 100%; padding: 8px 12px; border: 2px solid #dde3f5; border-radius: 8px; font-size: 0.9rem; outline: none; }
+  .rango-picker { display: none; margin-bottom: 12px; gap: 8px; }
+  .rango-picker .campo { flex: 1; }
+  .rango-picker label { display: block; font-size: 0.75rem; color: #444; font-weight: bold; margin-bottom: 4px; }
+  .rango-picker input[type=date] { width: 100%; padding: 8px 10px; border: 2px solid #dde3f5; border-radius: 8px; font-size: 0.85rem; outline: none; }
+  .ranking-title{ font-size: 1rem; color: var(--ypf-blue); font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid var(--ypf-gold); padding-bottom: 6px; }
+  .rk-head, .rk-row { display: flex; align-items: center; }
+  .rk-head { padding: 0 6px 6px; font-size: 0.66rem; font-weight: bold; color: #666; text-align: center; }
+  .rk-row { padding: 9px 6px; border-radius: 10px; margin-bottom: 6px; background: #f8f9ff; }
+  .rk-row.top1 { background: #fff8e6; border-left: 4px solid gold; }
+  .rk-row.top2 { background: #f5f5f5; border-left: 4px solid silver; }
+  .rk-row.top3 { background: #fff3ee; border-left: 4px solid #cd7f32; }
+  .rk-pos { width: 24px; font-size: 1rem; font-weight: bold; color: var(--ypf-blue); flex: none; }
+  .rk-nom { flex: 1 1 0; min-width: 0; overflow: hidden; font-size: 0.78rem; font-weight: bold; color: #333; line-height: 1.15; }
+  .rk-nom small { display: inline-block; white-space: nowrap; background: var(--ypf-blue); color: #fff !important; border-radius: 8px; padding: 1px 6px; font-size: 0.62rem; font-weight: bold; color: var(--ypf-blue); margin-top: 2px; }
+  .rk-c { width: 38px; flex: none; text-align: center; font-size: 0.9rem; font-weight: bold; color: #333; }
+  .rk-c.pts { width: 52px; font-size: 1.1rem; color: var(--ypf-gold); }
+  .rk-c.inf { color: #b7791f; }
+  .rk-c.cero { color: #ccc; font-weight: normal; }
+  .rk-head .rk-c { font-size: 0.66rem; color: #666; }
+  .leyenda-dias { font-size: 0.7rem; color: #999; text-align: right; margin-bottom: 6px; }
+  .ultima-act { font-size: 0.75rem; color: #aaa; text-align: center; margin-top: 12px; }
+  #login-section { display: block; }
+  #main-section { display: none; }
+  .loading { text-align: center; color: #aaa; font-size: 0.9rem; padding: 20px; }
+  #ranking-exportable { background: white; padding: 6px; border-radius: 12px; }
+  .export-header { text-align: center; margin-bottom: 12px; display: none; }
+  .export-header h2 { color: var(--ypf-blue); font-size: 1.1rem; }
+  .export-header p { font-size: 0.8rem; color: #666; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>RANKING VENDEDORES</h1>
+  <p>GNC Escobar - Raspadita Infinia 2026</p>
+</div>
+<div class="card">
+  <div id="login-section">
+    <p style="text-align:center;font-size:0.9rem;color:#333;margin-bottom:16px;">Ingresa tu contrasena para acceder</p>
+    <div class="form-group">
+      <label>Contrasena</label>
+      <input type="password" id="inp-password" placeholder="***">
+    </div>
+    <button class="btn" onclick="login()">INGRESAR</button>
+    <div id="login-msg" style="color:#c0392b;text-align:center;margin-top:8px;font-size:0.85rem;"></div>
+  </div>
+  <div id="main-section">
+    <div class="filtros">
+      <button class="filtro-btn activo" id="btn-hoy" onclick="setFiltro('hoy')">HOY</button>
+      <button class="filtro-btn" id="btn-semana" onclick="setFiltro('semana')">SEMANA</button>
+      <button class="filtro-btn" id="btn-total" onclick="setFiltro('total')">TOTAL</button>
+      <button class="filtro-btn" id="btn-dia" onclick="setFiltro('dia')">POR DIA</button>
+      <button class="filtro-btn" id="btn-rango" onclick="setFiltro('rango')">RANGO</button>
+    </div>
+    <div class="filtros sector" id="filtros-sector">
+      <button class="filtro-btn activo" id="vis-playa" onclick="setVista('playa')">PLAYA</button>
+      <button class="filtro-btn" id="vis-full" onclick="setVista('full')">FULL</button>
+    </div>
+    <div class="fecha-picker" id="fecha-picker">
+      <input type="date" id="inp-fecha" onchange="renderRanking()">
+    </div>
+    <div class="rango-picker" id="rango-picker">
+      <div class="campo">
+        <label>Desde</label>
+        <input type="date" id="inp-rango-desde" onchange="renderRanking()">
+      </div>
+      <div class="campo">
+        <label>Hasta</label>
+        <input type="date" id="inp-rango-hasta" onchange="renderRanking()">
+      </div>
+    </div>
+    <div id="ranking-exportable">
+      <div class="export-header" id="export-header">
+        <h2>Ranking GNC Escobar</h2>
+        <p id="export-subtitulo"></p>
+      </div>
+      <div class="ranking-title" id="ranking-titulo">Ranking de hoy</div>
+      <div class="leyenda-dias" id="leyenda">Ranking general (sin Full): PTS = GNC 1 + Liquidos 1 + Infinia (columna aparte: 1 pt, y 5 pts del 21 al 24/10 y del 29 al 31/10) + Elaion 20 + App YPF 20. * App = puntos provisorios hasta verificar que sea la primera vez.</div>
+      <div id="ranking-lista"><div class="loading">Cargando datos...</div></div>
+    </div>
+    <div class="ultima-act" id="ultima-act"></div>
+    <button class="btn btn-blue" onclick="cargarRanking()">ACTUALIZAR</button>
+    <button class="btn btn-green" onclick="descargarImagen()">DESCARGAR PARA WHATSAPP</button>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+var WEBHOOK = "https://script.google.com/macros/s/AKfycbzLSO7QT1ERisH0E7aHW0S-aU2dok5goMu01IGRCT2Szgo7pnhX2LYBO4ceps9jVgKFCw/exec";
+var PASSWORD = '282';
+var filtroActual = 'hoy';
+var todosLosDatos = [];
+var vistaActual = 'playa';
+// Promo de Infinia: cada jugada con Infinia (nafta o diesel) suma PUNTOS_INFINIA puntos en estas fechas (inclusive).
+// Nombres que se unifican en el ranking (nombre viejo : nombre nuevo). Ej: Sharon tomo el QR y los stickers de Benetti.
+var ALIAS = { 'BENETTI GALINDO ABRIL': 'MAIDANA SHARON' };
+var PROMOS_INFINIA = [['2026-10-21','2026-10-24'],['2026-10-29','2026-10-31']];
+var PUNTOS_ELAION = 20;
+var PUNTOS_APP = 20; // provisorio hasta cruzar con el reporte de la App YPF
+var PUNTOS_INFINIA = 5; // 3 o mas raspaditas en un dia cuenta como 1 dia valido
+
+function login() {
+  var pass = document.getElementById('inp-password').value.trim();
+  if (pass === PASSWORD) {
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('main-section').style.display = 'block';
+    cargarRanking();
+  } else {
+    document.getElementById('login-msg').textContent = 'Contrasena incorrecta.';
+  }
+}
+
+document.getElementById('inp-password').addEventListener('keydown', function(e) { if(e.key==='Enter') login(); });
+
+function setFiltro(f) {
+  filtroActual = f;
+  document.querySelectorAll('.filtro-btn').forEach(function(b) { b.classList.remove('activo'); });
   document.getElementById('btn-' + f).classList.add('activo');
   var titulos = {hoy:'Ranking de hoy', semana:'Ranking de la semana', total:'Ranking total de la promocion', dia:'Ranking por dia', rango:'Ranking por rango de fechas'};
   document.getElementById('ranking-titulo').textContent = titulos[f];
