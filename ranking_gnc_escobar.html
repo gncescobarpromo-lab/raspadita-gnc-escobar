@@ -100,7 +100,7 @@
         <p id="export-subtitulo"></p>
       </div>
       <div class="ranking-title" id="ranking-titulo">Ranking de hoy</div>
-      <div class="leyenda-dias" id="leyenda">Ranking general (sin Full): PTS = GNC 1 + Liquidos 1 + Infinia (columna aparte: 1 pt, y 5 pts del 21 al 24/10 y del 29 al 31/10) + Elaion 20 + App YPF 20. * App = puntos provisorios hasta verificar que sea la primera vez.</div>
+      <div class="leyenda-dias" id="leyenda">Todas las columnas en puntos: GNC 1, Liquidos 1, Infinia 1 (5 pts del 21 al 24/10 y del 29 al 31/10), Elaion 20, App YPF 20. PTS = suma de las columnas. * App = puntos provisorios hasta verificar que sea la primera vez. Full va aparte.</div>
       <div id="ranking-lista"><div class="loading">Cargando datos...</div></div>
     </div>
     <div class="ultima-act" id="ultima-act"></div>
@@ -151,7 +151,7 @@ function setVista(v) {
   vistaActual = v;
   ['playa','full'].forEach(function(k) { document.getElementById('vis-' + k).classList.toggle('activo', k === v); });
   var leyendas = {
-    playa: 'Ranking general (sin Full): PTS = GNC 1 + Liquidos 1 + Infinia (columna aparte: 1 pt, y 5 pts del 21 al 24/10 y del 29 al 31/10) + Elaion 20 + App YPF 20. * App = puntos provisorios hasta verificar que sea la primera vez.',
+    playa: 'Todas las columnas en puntos: GNC 1, Liquidos 1, Infinia 1 (5 pts del 21 al 24/10 y del 29 al 31/10), Elaion 20, App YPF 20. PTS = suma de las columnas. * App = puntos provisorios hasta verificar que sea la primera vez. Full va aparte.',
     full: 'Cantidad de raspaditas de Full.'
   };
   document.getElementById('leyenda').textContent = leyendas[v];
@@ -221,12 +221,13 @@ function renderRanking() {
       var n = Number(r.n) || 0, ni = Math.min(Number(r.ni) || 0, n);
       var enPromo = PROMOS_INFINIA.some(function(p) { return r.fecha >= p[0] && r.fecha <= p[1]; });
       if (r.cat === 'GNC') { it.gnc += n; it.pts += n; }
-      else if (r.cat === 'LIQUIDO') { it.liq += n - ni; it.inf += ni; it.pts += enPromo ? (n - ni) + ni * PUNTOS_INFINIA : n; }
-      else if (r.cat === 'ELAION') { it.ela += n; it.pts += n * PUNTOS_ELAION; }
+      else if (r.cat === 'LIQUIDO') { var pi = ni * (enPromo ? PUNTOS_INFINIA : 1); it.liq += n - ni; it.inf += pi; it.pts += (n - ni) + pi; }
+      else if (r.cat === 'ELAION') { it.ela += n * PUNTOS_ELAION; it.pts += n * PUNTOS_ELAION; }
       else if (r.cat === 'APP') {
         var nno = Math.min(Number(r.nno) || 0, n), nsi = Math.min(Number(r.nsi) || 0, n - nno), pend = n - nno - nsi;
-        it.app += n; it.appProv += pend;
-        it.pts += (nsi + pend) * PUNTOS_APP + nno;
+        var pa = (nsi + pend) * PUNTOS_APP + nno;
+        it.app += pa; it.appProv += pend;
+        it.pts += pa;
       }
       else if (r.cat === 'FULL') { it.full += n; it.ptsFull = (it.ptsFull || 0) + n; }
     });
