@@ -38,8 +38,8 @@
   .rk-pos { width: 24px; font-size: 1rem; font-weight: bold; color: var(--ypf-blue); flex: none; }
   .rk-nom { flex: 1 1 0; min-width: 0; overflow: hidden; font-size: 0.78rem; font-weight: bold; color: #333; line-height: 1.15; }
   .rk-nom small { display: inline-block; white-space: nowrap; background: var(--ypf-blue); color: #fff !important; border-radius: 8px; padding: 1px 6px; font-size: 0.62rem; font-weight: bold; color: var(--ypf-blue); margin-top: 2px; }
-  .rk-c { width: 44px; flex: none; text-align: center; font-size: 0.9rem; font-weight: bold; color: #333; }
-  .rk-c.pts { width: 58px; font-size: 1.1rem; color: var(--ypf-gold); }
+  .rk-c { width: 38px; flex: none; text-align: center; font-size: 0.9rem; font-weight: bold; color: #333; }
+  .rk-c.pts { width: 52px; font-size: 1.1rem; color: var(--ypf-gold); }
   .rk-c.inf { color: #b7791f; }
   .rk-c.cero { color: #ccc; font-weight: normal; }
   .rk-head .rk-c { font-size: 0.66rem; color: #666; }
@@ -100,7 +100,7 @@
         <p id="export-subtitulo"></p>
       </div>
       <div class="ranking-title" id="ranking-titulo">Ranking de hoy</div>
-      <div class="leyenda-dias" id="leyenda">Cantidad de raspaditas. TOTAL = GNC + LIQ. + FULL. INF. = puntos extra por Infinia (5 por carga del 21 al 24/10).</div>
+      <div class="leyenda-dias" id="leyenda">Ranking general (sin Full): PTS = GNC 1 + Liquidos 1 + Infinia (columna aparte: 1 pt, y 5 pts del 21 al 24/10 y del 29 al 31/10) + Elaion 20 + App YPF 20. * App = puntos provisorios hasta verificar que sea la primera vez.</div>
       <div id="ranking-lista"><div class="loading">Cargando datos...</div></div>
     </div>
     <div class="ultima-act" id="ultima-act"></div>
@@ -118,8 +118,9 @@ var vistaActual = 'playa';
 // Promo de Infinia: cada jugada con Infinia (nafta o diesel) suma PUNTOS_INFINIA puntos en estas fechas (inclusive).
 // Nombres que se unifican en el ranking (nombre viejo : nombre nuevo). Ej: Sharon tomo el QR y los stickers de Benetti.
 var ALIAS = { 'BENETTI GALINDO ABRIL': 'MAIDANA SHARON' };
-var PROMO_DESDE = '2026-10-21';
-var PROMO_HASTA = '2026-10-24';
+var PROMOS_INFINIA = [['2026-10-21','2026-10-24'],['2026-10-29','2026-10-31']];
+var PUNTOS_ELAION = 20;
+var PUNTOS_APP = 20; // provisorio hasta cruzar con el reporte de la App YPF
 var PUNTOS_INFINIA = 5; // 3 o mas raspaditas en un dia cuenta como 1 dia valido
 
 function login() {
@@ -138,139 +139,4 @@ document.getElementById('inp-password').addEventListener('keydown', function(e) 
 function setFiltro(f) {
   filtroActual = f;
   document.querySelectorAll('.filtro-btn').forEach(function(b) { b.classList.remove('activo'); });
-  document.getElementById('btn-' + f).classList.add('activo');
-  var titulos = {hoy:'Ranking de hoy', semana:'Ranking de la semana', total:'Ranking total de la promocion', dia:'Ranking por dia', rango:'Ranking por rango de fechas'};
-  document.getElementById('ranking-titulo').textContent = titulos[f];
-  document.getElementById('fecha-picker').style.display = f === 'dia' ? 'block' : 'none';
-  document.getElementById('rango-picker').style.display = f === 'rango' ? 'flex' : 'none';
-  renderRanking();
-}
-
-function setVista(v) {
-  vistaActual = v;
-  ['playa','full'].forEach(function(k) { document.getElementById('vis-' + k).classList.toggle('activo', k === v); });
-  var leyendas = {
-    playa: 'Cantidad de raspaditas. TOTAL = GNC + LIQ. + FULL. INF. = puntos extra por Infinia (5 por carga del 21 al 24/10).',
-    full: 'Cantidad de raspaditas de Full.'
-  };
-  document.getElementById('leyenda').textContent = leyendas[v];
-  renderRanking();
-}
-
-// Fecha de hoy en hora Argentina (aaaa-mm-dd). Antes se usaba UTC y a partir de las 21:00 "hoy" pasaba a ser mañana.
-function hoyArgentina() {
-  return new Date().toLocaleDateString('en-CA', {timeZone: 'America/Argentina/Buenos_Aires'});
-}
-
-function cargarRanking() {
-  document.getElementById('ranking-lista').innerHTML = '<div class="loading">Cargando datos...</div>';
-  fetch(WEBHOOK, {method:'POST', body:JSON.stringify({accion:'ranking', password:PASSWORD})})
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.status === 'ok') {
-        todosLosDatos = data.registros;
-        renderRanking();
-        document.getElementById('ultima-act').textContent = 'Ultima actualizacion: ' + new Date().toLocaleTimeString('es-AR');
-      } else {
-        document.getElementById('ranking-lista').innerHTML = '<div class="loading">Error al cargar datos.</div>';
-      }
-    })
-    .catch(function() { document.getElementById('ranking-lista').innerHTML = '<div class="loading">Error de conexion.</div>'; });
-}
-
-function renderRanking() {
-  var hoyStr = hoyArgentina();
-  var d0 = new Date(hoyStr + 'T12:00:00Z');
-  d0.setUTCDate(d0.getUTCDate() - ((d0.getUTCDay() + 6) % 7));
-  var inicioSemanaStr = d0.toISOString().split('T')[0];
-  var diaEspecifico = document.getElementById('inp-fecha').value;
-  var rangoDesde = document.getElementById('inp-rango-desde').value;
-  var rangoHasta = document.getElementById('inp-rango-hasta').value;
-
-  // Cada registro del servidor ya viene agrupado: {fecha, vendedor, cat, n} (n = cantidad de jugadas).
-  // Se excluyen las jugadas marcadas como fraude.
-  var filtrados = todosLosDatos.filter(function(r) {
-    if (r.vendedor === 'FRAUDE') return false;
-    if (filtroActual === 'hoy') return r.fecha === hoyStr;
-    if (filtroActual === 'semana') return r.fecha >= inicioSemanaStr;
-    if (filtroActual === 'dia') return diaEspecifico ? r.fecha === diaEspecifico : false;
-    if (filtroActual === 'rango') {
-      if (!rangoDesde || !rangoHasta) return false;
-      return r.fecha >= rangoDesde && r.fecha <= rangoHasta;
-    }
-    return true;
-  });
-
-  if (filtroActual === 'rango' && (!rangoDesde || !rangoHasta)) {
-    document.getElementById('ranking-lista').innerHTML = '<div class="loading">Elegi la fecha desde y hasta.</div>';
-    return;
-  }
-
-  // Agrupamos por vendedor.
-  var porVendedor = {};
-  filtrados.forEach(function(r) {
-    if (ALIAS[r.vendedor]) r = { fecha: r.fecha, vendedor: ALIAS[r.vendedor], cat: r.cat, n: r.n, ni: r.ni };
-    if (!porVendedor[r.vendedor]) porVendedor[r.vendedor] = [];
-    porVendedor[r.vendedor].push(r);
-  });
-
-  var lista = Object.keys(porVendedor).map(function(v) {
-    var it = { vendedor: v, gnc: 0, liq: 0, full: 0, inf: 0 };
-    porVendedor[v].forEach(function(r) {
-      var n = Number(r.n) || 0, ni = Math.min(Number(r.ni) || 0, n);
-      if (r.cat === 'GNC') it.gnc += n; else if (r.cat === 'LIQUIDO') it.liq += n; else if (r.cat === 'FULL') it.full += n;
-      // INF. = puntos de Infinia: solo del PROMO_DESDE al PROMO_HASTA, PUNTOS_INFINIA por cada jugada con Infinia.
-      // (esa jugada igual cuenta 1 en LIQ. y en TOTAL)
-      if (r.fecha >= PROMO_DESDE && r.fecha <= PROMO_HASTA) it.inf += ni * PUNTOS_INFINIA;
-    });
-    it.total = it.gnc + it.liq + it.full;
-    return it;
-  });
-  var cols = {
-    playa:  [['GNC','gnc',''],['LIQ.','liq',''],['INF.','inf','inf'],['TOTAL','total','pts']],
-    full:   [['FULL','full','pts']]
-  }[vistaActual];
-  var clave = {playa:'total', full:'full'}[vistaActual];
-  if (vistaActual === 'full') lista = lista.filter(function(x) { return x.full > 0; });
-  if (vistaActual === 'playa') lista = lista.filter(function(x) { return x.total > 0; });
-  lista.sort(function(a, b) { return (b[clave] - a[clave]) || (b.total - a.total) || a.vendedor.localeCompare(b.vendedor); });
-
-  if (lista.length === 0) {
-    document.getElementById('ranking-lista').innerHTML = '<div class="loading">Sin datos para este periodo.</div>';
-    return;
-  }
-
-  function celda(x, extra) { return '<div class="rk-c ' + (extra || '') + (x ? '' : ' cero') + '">' + (x ? x : '-') + '</div>'; }
-  var html = '<div class="rk-head"><div class="rk-pos"></div><div class="rk-nom"></div>';
-  cols.forEach(function(c) { html += '<div class="rk-c ' + c[2] + '">' + c[0] + '</div>'; });
-  html += '</div>';
-  lista.forEach(function(item, i) {
-    var clase = i===0?'top1':i===1?'top2':i===2?'top3':'';
-    var medalla = i<3 ? String(i+1) : (i+1)+'.';
-    html += '<div class="rk-row '+clase+'">';
-    html += '<div class="rk-pos">'+medalla+'</div>';
-    html += '<div class="rk-nom">'+item.vendedor+'</div>';
-    cols.forEach(function(c) { html += celda(item[c[1]], c[2]); });
-    html += '</div>';
-  });
-  document.getElementById('ranking-lista').innerHTML = html;
-}
-
-function descargarImagen() {
-  var rangoTexto = (document.getElementById('inp-rango-desde').value || '?') + ' a ' + (document.getElementById('inp-rango-hasta').value || '?');
-  var subtitulos = {hoy:'Hoy - '+new Date().toLocaleDateString('es-AR', {timeZone: 'America/Argentina/Buenos_Aires'}), semana:'Esta semana', total:'Total promocion', dia:document.getElementById('inp-fecha').value || 'Dia seleccionado', rango:rangoTexto};
-  document.getElementById('export-header').style.display = 'block';
-  var nomVis = {playa:' - Playa', full:' - Full'};
-  document.getElementById('export-subtitulo').textContent = subtitulos[filtroActual] + nomVis[vistaActual];
-  var el = document.getElementById('ranking-exportable');
-  html2canvas(el, {backgroundColor:'#ffffff', scale:2}).then(function(canvas) {
-    document.getElementById('export-header').style.display = 'none';
-    var link = document.createElement('a');
-    link.download = 'ranking_gnc_escobar_' + new Date().toLocaleDateString('es-AR', {timeZone: 'America/Argentina/Buenos_Aires'}).replace(/\//g,'-') + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  });
-}
-</script>
-</body>
-</html>
+  document.getElementById('btn-' +
