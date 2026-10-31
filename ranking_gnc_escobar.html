@@ -100,7 +100,7 @@
         <p id="export-subtitulo"></p>
       </div>
       <div class="ranking-title" id="ranking-titulo">Ranking de hoy</div>
-      <div class="leyenda-dias" id="leyenda">Todas las columnas en puntos: GNC 1, Liquidos 1, Infinia 1 (5 pts del 21 al 24/10 y del 29 al 31/10), Elaion 20, App YPF 20. PTS = suma de las columnas. * App = puntos provisorios hasta verificar que sea la primera vez. Full va aparte.</div>
+      <div class="leyenda-dias" id="leyenda">Todas las columnas en puntos. Desde el 1/11: GNC, Super, D5 y Elaion 1, Infinia 3, App YPF 5 (solo primera vez). Hasta el 31/10: GNC y liquidos 1, Infinia 5 en promo, Elaion 20, App 20. PTS = suma de las columnas. * App = puntos provisorios hasta verificar que sea la primera vez. Full va aparte.</div>
       <div id="ranking-lista"><div class="loading">Cargando datos...</div></div>
     </div>
     <div class="ultima-act" id="ultima-act"></div>
@@ -121,6 +121,8 @@ var ALIAS = { 'BENETTI GALINDO ABRIL': 'MAIDANA SHARON' };
 var PROMOS_INFINIA = [['2026-10-21','2026-10-24'],['2026-10-29','2026-10-31']];
 var PUNTOS_ELAION = 20;
 var PUNTOS_APP = 20; // provisorio hasta cruzar con el reporte de la App YPF
+var PUNTOS_NOV_DESDE = '2026-11-01'; // desde esta fecha rige el esquema nuevo: GNC/Super/D5/Elaion/Full 1, Infinia 3, App YPF 5 solo primera vez
+var PUNTOS_ELAION_NOV = 1, PUNTOS_INFINIA_NOV = 3, PUNTOS_APP_NOV = 5;
 var PUNTOS_INFINIA = 5; // 3 o mas raspaditas en un dia cuenta como 1 dia valido
 
 function login() {
@@ -151,7 +153,7 @@ function setVista(v) {
   vistaActual = v;
   ['playa','full'].forEach(function(k) { document.getElementById('vis-' + k).classList.toggle('activo', k === v); });
   var leyendas = {
-    playa: 'Todas las columnas en puntos: GNC 1, Liquidos 1, Infinia 1 (5 pts del 21 al 24/10 y del 29 al 31/10), Elaion 20, App YPF 20. PTS = suma de las columnas. * App = puntos provisorios hasta verificar que sea la primera vez. Full va aparte.',
+    playa: 'Todas las columnas en puntos. Desde el 1/11: GNC, Super, D5 y Elaion 1, Infinia 3, App YPF 5 (solo primera vez). Hasta el 31/10: GNC y liquidos 1, Infinia 5 en promo, Elaion 20, App 20. PTS = suma de las columnas. * App = puntos provisorios hasta verificar que sea la primera vez. Full va aparte.',
     full: 'Cantidad de raspaditas de Full.'
   };
   document.getElementById('leyenda').textContent = leyendas[v];
@@ -220,12 +222,13 @@ function renderRanking() {
     porVendedor[v].forEach(function(r) {
       var n = Number(r.n) || 0, ni = Math.min(Number(r.ni) || 0, n);
       var enPromo = PROMOS_INFINIA.some(function(p) { return r.fecha >= p[0] && r.fecha <= p[1]; });
+      var nov = r.fecha >= PUNTOS_NOV_DESDE;
       if (r.cat === 'GNC') { it.gnc += n; it.pts += n; }
-      else if (r.cat === 'LIQUIDO') { var pi = ni * (enPromo ? PUNTOS_INFINIA : 1); it.liq += n - ni; it.inf += pi; it.pts += (n - ni) + pi; }
-      else if (r.cat === 'ELAION') { it.ela += n * PUNTOS_ELAION; it.pts += n * PUNTOS_ELAION; }
+      else if (r.cat === 'LIQUIDO') { var pi = ni * (nov ? PUNTOS_INFINIA_NOV : (enPromo ? PUNTOS_INFINIA : 1)); it.liq += n - ni; it.inf += pi; it.pts += (n - ni) + pi; }
+      else if (r.cat === 'ELAION') { var pe = n * (nov ? PUNTOS_ELAION_NOV : PUNTOS_ELAION); it.ela += pe; it.pts += pe; }
       else if (r.cat === 'APP') {
         var nno = Math.min(Number(r.nno) || 0, n), nsi = Math.min(Number(r.nsi) || 0, n - nno), pend = n - nno - nsi;
-        var pa = (nsi + pend) * PUNTOS_APP + nno;
+        var pa = nov ? (nsi + pend) * PUNTOS_APP_NOV : (nsi + pend) * PUNTOS_APP + nno;
         it.app += pa; it.appProv += pend;
         it.pts += pa;
       }
