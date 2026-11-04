@@ -123,6 +123,8 @@ var PUNTOS_ELAION = 20;
 var PUNTOS_APP = 20; // provisorio hasta cruzar con el reporte de la App YPF
 var PUNTOS_NOV_DESDE = '2026-11-01'; // desde esta fecha rige el esquema nuevo: GNC/Super/D5/Elaion/Full 1, Infinia 3, App YPF 5 solo primera vez
 var PUNTOS_ELAION_NOV = 1, PUNTOS_INFINIA_NOV = 3, PUNTOS_APP_NOV = 5;
+// 04/11/2026: promo Infinia 5, 6 y 7 de noviembre (inclusive): el vendedor suma 5 puntos por cada carga de Infinia (en vez de 3).
+var PROMO_INFINIA_NOV = ['2026-11-05','2026-11-07'], PUNTOS_INFINIA_PROMO_NOV = 5;
 var PUNTOS_INFINIA = 5; // 3 o mas raspaditas en un dia cuenta como 1 dia valido
 
 function login() {
@@ -224,7 +226,7 @@ function renderRanking() {
       var enPromo = PROMOS_INFINIA.some(function(p) { return r.fecha >= p[0] && r.fecha <= p[1]; });
       var nov = r.fecha >= PUNTOS_NOV_DESDE;
       if (r.cat === 'GNC') { it.gnc += n; it.pts += n; }
-      else if (r.cat === 'LIQUIDO') { var pi = ni * (nov ? PUNTOS_INFINIA_NOV : (enPromo ? PUNTOS_INFINIA : 1)); it.liq += n - ni; it.inf += pi; it.pts += (n - ni) + pi; }
+      else if (r.cat === 'LIQUIDO') { var pi = ni * (nov ? ((r.fecha >= PROMO_INFINIA_NOV[0] && r.fecha <= PROMO_INFINIA_NOV[1]) ? PUNTOS_INFINIA_PROMO_NOV : PUNTOS_INFINIA_NOV) : (enPromo ? PUNTOS_INFINIA : 1)); it.liq += n - ni; it.inf += pi; it.pts += (n - ni) + pi; }
       else if (r.cat === 'ELAION') { var pe = n * (nov ? PUNTOS_ELAION_NOV : PUNTOS_ELAION); it.ela += pe; it.pts += pe; }
       else if (r.cat === 'APP') {
         var nno = Math.min(Number(r.nno) || 0, n), nsi = Math.min(Number(r.nsi) || 0, n - nno), pend = n - nno - nsi;
