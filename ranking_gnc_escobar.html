@@ -38,9 +38,10 @@
   .rk-pos { width: 24px; font-size: 1rem; font-weight: bold; color: var(--ypf-blue); flex: none; }
   .rk-nom { flex: 1 1 0; min-width: 0; overflow: hidden; font-size: 0.78rem; font-weight: bold; color: #333; line-height: 1.15; }
   .rk-nom small { display: inline-block; white-space: nowrap; background: var(--ypf-blue); color: #fff !important; border-radius: 8px; padding: 1px 6px; font-size: 0.62rem; font-weight: bold; color: var(--ypf-blue); margin-top: 2px; }
-  .rk-c { width: 38px; flex: none; text-align: center; font-size: 0.9rem; font-weight: bold; color: #333; }
+  .rk-c { width: 34px; flex: none; text-align: center; font-size: 0.85rem; font-weight: bold; color: #333; }
   .rk-c.pts { width: 52px; font-size: 1.1rem; color: var(--ypf-gold); }
   .rk-c.inf { color: #b7791f; }
+  .rk-c.serv { width: 40px; color: #1a7f4b; }
   .rk-c.cero { color: #ccc; font-weight: normal; }
   .rk-head .rk-c { font-size: 0.66rem; color: #666; }
   .leyenda-dias { font-size: 0.7rem; color: #999; text-align: right; margin-bottom: 6px; }
@@ -124,7 +125,11 @@ var PUNTOS_APP = 20; // provisorio hasta cruzar con el reporte de la App YPF
 var PUNTOS_NOV_DESDE = '2026-11-01'; // desde esta fecha rige el esquema nuevo: GNC/Super/D5/Elaion/Full 1, Infinia 3, App YPF 5 solo primera vez
 var PUNTOS_ELAION_NOV = 1, PUNTOS_INFINIA_NOV = 3, PUNTOS_APP_NOV = 5;
 // 04/11/2026: promo Infinia 5, 6 y 7 de noviembre (inclusive): el vendedor suma 5 puntos por cada carga de Infinia (en vez de 3).
-var PROMO_INFINIA_NOV = ['2026-11-05','2026-11-07'], PUNTOS_INFINIA_PROMO_NOV = 5;
+// 10/11/2026: se suma la promo del 11 al 16/11 (inclusive), tambien 5 puntos por carga de Infinia.
+var PROMOS_INFINIA_NOV = [['2026-11-05','2026-11-07'],['2026-11-11','2026-11-16']], PUNTOS_INFINIA_PROMO_NOV = 5;
+// 10/11/2026: Serviclub / pagos con app YPF: 30 puntos por operacion para el empleado (no da numeros al cliente). Vienen del reporte de YPF (hoja Puntos_Serviclub).
+var PUNTOS_SERVICLUB = 30;
+var todosServiclub = [];
 var PUNTOS_INFINIA = 5; // 3 o mas raspaditas en un dia cuenta como 1 dia valido
 
 function login() {
@@ -174,6 +179,7 @@ function cargarRanking() {
     .then(function(data) {
       if (data.status === 'ok') {
         todosLosDatos = data.registros;
+        todosServiclub = data.serviclub || [];
         renderRanking();
         document.getElementById('ultima-act').textContent = 'Ultima actualizacion: ' + new Date().toLocaleTimeString('es-AR');
       } else {
@@ -194,7 +200,7 @@ function renderRanking() {
 
   // Cada registro del servidor ya viene agrupado: {fecha, vendedor, cat, n} (n = cantidad de jugadas).
   // Se excluyen las jugadas marcadas como fraude.
-  var filtrados = todosLosDatos.filter(function(r) {
+  var pasaFiltro = function(r) {
     if (r.vendedor === 'FRAUDE') return false;
     if (filtroActual === 'hoy') return r.fecha === hoyStr;
     if (filtroActual === 'semana') return r.fecha >= inicioSemanaStr;
@@ -204,7 +210,9 @@ function renderRanking() {
       return r.fecha >= rangoDesde && r.fecha <= rangoHasta;
     }
     return true;
-  });
+  };
+  var filtrados = todosLosDatos.filter(pasaFiltro);
+  var filtradosSv = todosServiclub.filter(pasaFiltro);
 
   if (filtroActual === 'rango' && (!rangoDesde || !rangoHasta)) {
     document.getElementById('ranking-lista').innerHTML = '<div class="loading">Elegi la fecha desde y hasta.</div>';
@@ -219,14 +227,20 @@ function renderRanking() {
     porVendedor[r.vendedor].push(r);
   });
 
+  filtradosSv.forEach(function(r) {
+    var v = ALIAS[r.vendedor] || r.vendedor;
+    if (!porVendedor[v]) porVendedor[v] = [];
+    porVendedor[v].push({ fecha: r.fecha, vendedor: v, cat: 'SERV', n: r.n });
+  });
+
   var lista = Object.keys(porVendedor).map(function(v) {
-    var it = { vendedor: v, gnc: 0, liq: 0, full: 0, inf: 0, ela: 0, app: 0, appProv: 0, pts: 0 };
+    var it = { vendedor: v, gnc: 0, liq: 0, full: 0, inf: 0, ela: 0, app: 0, appProv: 0, serv: 0, pts: 0 };
     porVendedor[v].forEach(function(r) {
       var n = Number(r.n) || 0, ni = Math.min(Number(r.ni) || 0, n);
       var enPromo = PROMOS_INFINIA.some(function(p) { return r.fecha >= p[0] && r.fecha <= p[1]; });
       var nov = r.fecha >= PUNTOS_NOV_DESDE;
       if (r.cat === 'GNC') { it.gnc += n; it.pts += n; }
-      else if (r.cat === 'LIQUIDO') { var pi = ni * (nov ? ((r.fecha >= PROMO_INFINIA_NOV[0] && r.fecha <= PROMO_INFINIA_NOV[1]) ? PUNTOS_INFINIA_PROMO_NOV : PUNTOS_INFINIA_NOV) : (enPromo ? PUNTOS_INFINIA : 1)); it.liq += n - ni; it.inf += pi; it.pts += (n - ni) + pi; }
+      else if (r.cat === 'LIQUIDO') { var pi = ni * (nov ? (PROMOS_INFINIA_NOV.some(function(p) { return r.fecha >= p[0] && r.fecha <= p[1]; }) ? PUNTOS_INFINIA_PROMO_NOV : PUNTOS_INFINIA_NOV) : (enPromo ? PUNTOS_INFINIA : 1)); it.liq += n - ni; it.inf += pi; it.pts += (n - ni) + pi; }
       else if (r.cat === 'ELAION') { var pe = n * (nov ? PUNTOS_ELAION_NOV : PUNTOS_ELAION); it.ela += pe; it.pts += pe; }
       else if (r.cat === 'APP') {
         var nno = Math.min(Number(r.nno) || 0, n), nsi = Math.min(Number(r.nsi) || 0, n - nno), pend = n - nno - nsi;
@@ -234,13 +248,14 @@ function renderRanking() {
         it.app += pa; it.appProv += pend;
         it.pts += pa;
       }
+      else if (r.cat === 'SERV') { var ps = n * PUNTOS_SERVICLUB; it.serv += ps; it.pts += ps; }
       else if (r.cat === 'FULL') { it.full += n; it.ptsFull = (it.ptsFull || 0) + n; }
     });
     it.total = it.pts;
     return it;
   });
   var cols = {
-    playa:  [['GNC','gnc',''],['LIQ.','liq',''],['INF.','inf','inf'],['ELA.','ela',''],['APP','appTxt',''],['PTS','pts','pts']],
+    playa:  [['GNC','gnc',''],['LIQ.','liq',''],['INF.','inf','inf'],['ELA.','ela',''],['APP','appTxt',''],['SERV.','serv','serv'],['PTS','pts','pts']],
     full:   [['FULL','full','pts']]
   }[vistaActual];
   var clave = {playa:'pts', full:'full'}[vistaActual];
