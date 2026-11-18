@@ -278,8 +278,17 @@ var MENSAJES_ERROR = {
   esperar_entre_cargas: ['Todavía no podés participar', 'Esperá 2 horas desde tu última carga de este tipo para volver a participar.'],
   bloqueado_dia: ['Sistema bloqueado por hoy', 'Demasiados intentos fallidos. Volvé a intentar mañana.'],
   app_no_aplica: ['No se puede usar la App YPF', 'La App YPF solo aplica a Nafta Super, Infinia y Elaion. No se combina con GNC, Full ni Diésel 500 el mismo día. Consultá con el vendedor de playa.'],
+  numeros_agotados: ['Números agotados', 'Ya no hay más números disponibles para el sorteo. ¡Gracias por participar!'],
   bloqueado: ['Participación en revisión', 'Hemos detectado irregularidades en el proceso de participación de este sorteo. Pedí hablar con el encargado de la estacion para gestionar la habilitación.']
 };
+function mostrarAgotado() {
+  var ids = ['codigo-section','vehiculo-section','loading-section','result-section','terminada-section'];
+  for (var i = 0; i < ids.length; i++) { var el = document.getElementById(ids[i]); if (el) el.style.display = 'none'; }
+  clearTimeout(POLL_TIMER);
+  JUGADA_TERMINADA = true;
+  borrarJugada();
+  mostrarError('numeros_agotados');
+}
 function mostrarError(status) {
   var m = MENSAJES_ERROR[status] || ['No pudimos procesar tu código', 'Consultá con el vendedor de playa. (' + status + ')'];
   document.getElementById('loading-section').style.display='none';
@@ -360,6 +369,7 @@ function validarCodigo2(auto) {
     .then(function(r){ return r.json(); })
     .then(function(d){
       b.disabled = false; b.textContent = 'Validar código';
+      if (d && d.status === 'numeros_agotados') { mostrarAgotado(); return; }
       document.getElementById('loading-section').style.display = 'none';
       document.getElementById('result-section').style.display = 'block';
       if (d && d.status === 'ok') {
@@ -431,7 +441,7 @@ function restaurarJugada() {
   consultarEstado(j.c, function (d) {
     var validado = j.v, cant = j.n;
     if (d && d.status === 'ok') {
-      if (d.asignado === 'SI' || d.asignado === 'BLOQUEADO') { borrarJugada(); return; }
+      if (d.asignado === 'SI' || d.asignado === 'BLOQUEADO' || d.asignado === 'AGOTADO') { borrarJugada(); return; }
       validado = (d.validado === true);
       cant = Number(d.cantidad) || cant;
     } else if (d && d.status) { borrarJugada(); return; }
@@ -452,6 +462,7 @@ function restaurarJugada() {
 function terminarSiAsignada(intentos) {
   if (JUGADA_TERMINADA || !CODIGO_ACTUAL) return;
   consultarEstado(CODIGO_ACTUAL, function (d) {
+    if (d && d.status === 'ok' && d.asignado === 'AGOTADO') { mostrarAgotado(); return; }
     if (d && d.status === 'ok' && d.asignado === 'SI') { JUGADA_TERMINADA = true; borrarJugada(); mostrarJugadaTerminada(); return; }
     if (intentos > 0) POLL_TIMER = setTimeout(function () { terminarSiAsignada(intentos - 1); }, 4000);
   });
