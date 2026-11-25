@@ -81,7 +81,7 @@
       <button class="filtro-btn" id="btn-rango" onclick="setFiltro('rango')">RANGO</button>
     </div>
     <div class="filtros sector" id="filtros-sector">
-      <button class="filtro-btn activo" id="vis-equipo" onclick="setVista('equipo')">RANKING</button>
+      <button class="filtro-btn activo" id="vis-equipo" onclick="setVista('equipo')">PLAYA</button>
       <button class="filtro-btn" id="vis-playa" onclick="setVista('playa')">SORTEO MOTOS</button>
       <button class="filtro-btn" id="vis-full" onclick="setVista('full')">FULL</button>
     </div>
@@ -387,7 +387,7 @@ function descargarImagen() {
   var rangoTexto = (document.getElementById('inp-rango-desde').value || '?') + ' a ' + (document.getElementById('inp-rango-hasta').value || '?');
   var subtitulos = {hoy:'Hoy - '+new Date().toLocaleDateString('es-AR', {timeZone: 'America/Argentina/Buenos_Aires'}), semana:'Esta semana', total:'Total', dia:document.getElementById('inp-fecha').value || 'Dia seleccionado', rango:rangoTexto};
   document.getElementById('export-header').style.display = 'block';
-  var nomVis = {equipo:' - Ranking de equipo', playa:' - Sorteo motos (cerrado)', full:' - Full'};
+  var nomVis = {equipo:' - Playa', playa:' - Sorteo motos (cerrado)', full:' - Full'};
   document.getElementById('export-subtitulo').textContent = subtitulos[filtroActual] + nomVis[vistaActual];
   var el = document.getElementById('ranking-exportable');
   html2canvas(el, {backgroundColor:'#ffffff', scale:2}).then(function(canvas) {
