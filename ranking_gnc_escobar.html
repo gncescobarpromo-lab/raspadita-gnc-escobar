@@ -144,6 +144,10 @@ var todosServiclub = [];
 var ETAPA2_DESDE = '2026-11-26';
 var PUNTOS_BOLSITA = 10;
 var MARCA_BOLSITA = '#BOLSITA';
+// 25/11/2026: el ranking del Full sigue: 1 punto por promocion del Full vendida desde el 26/11, sumado a lo que juntaron en el sorteo.
+// Se carga en la misma hoja Puntos_Serviclub con " #FULL" al final del nombre (ej: "PEREZ ANA #FULL").
+var PUNTOS_PROMO_FULL = 1;
+var MARCA_FULL = '#FULL';
 var PUNTOS_INFINIA = 5; // 3 o mas raspaditas en un dia cuenta como 1 dia valido
 
 function login() {
@@ -176,7 +180,7 @@ function setVista(v) {
   var leyendas = {
     equipo: 'BASE = puntos finales del sorteo de las motos (sin Full), solo en TOTAL. Desde el 26/11: SERV. = 30 puntos por cliente nuevo con App YPF / Serviclub (Super, Infinia e Infinia diesel). BOLS. = 10 puntos por bolsita del Full vendida. PTS = BASE + SERV. + BOLS.',
     playa: 'Todas las columnas en puntos. Desde el 1/11: GNC, Super, D5 y Elaion 1, Infinia 3, App YPF 5 (solo primera vez). Hasta el 31/10: GNC y liquidos 1, Infinia 5 en promo, Elaion 20, App 20. PTS = suma de las columnas. * App = puntos provisorios hasta verificar que sea la primera vez. Full va aparte. Cerrado al 25/11.',
-    full: 'Cantidad de raspaditas de Full (cerrado con el sorteo de las motos).'
+    full: 'BASE = raspaditas de Full del sorteo (1 punto cada una), solo en TOTAL. PROMO = 1 punto por promocion del Full vendida desde el 26/11. PTS = BASE + PROMO.'
   };
   document.getElementById('leyenda').textContent = leyendas[v];
   renderRanking();
@@ -227,7 +231,9 @@ function renderRanking() {
     return true;
   };
   var esBolsita = function(r) { return String(r.vendedor || '').toUpperCase().indexOf(MARCA_BOLSITA) >= 0; };
-  var sinMarca = function(v) { v = String(v || '').replace(/#BOLSITA/i, '').trim(); return ALIAS[v] || v; };
+  var esPromoFull = function(r) { return String(r.vendedor || '').toUpperCase().indexOf(MARCA_FULL) >= 0; };
+  var conMarca = function(r) { return esBolsita(r) || esPromoFull(r); };
+  var sinMarca = function(v) { v = String(v || '').replace(/#BOLSITA|#FULL/ig, '').trim(); return ALIAS[v] || v; };
   var antesEtapa2 = function(r) { return r.fecha < ETAPA2_DESDE; };
   var desdeEtapa2 = function(r) { return r.fecha >= ETAPA2_DESDE; };
 
@@ -239,12 +245,13 @@ function renderRanking() {
     // BASE congelada (solo en TOTAL): mismos puntos de la vista SORTEO hasta el 25/11.
     var base = (filtroActual === 'total') ? calcularPuntosSorteo(
       todosLosDatos.filter(function(r) { return r.vendedor !== 'FRAUDE' && antesEtapa2(r); }),
-      todosServiclub.filter(function(r) { return !esBolsita(r) && antesEtapa2(r); })
+      todosServiclub.filter(function(r) { return !conMarca(r) && antesEtapa2(r); })
     ) : {};
     var eq = {};
     var fila = function(v) { if (!eq[v]) eq[v] = { vendedor: v, base: 0, serv: 0, bols: 0, pts: 0 }; return eq[v]; };
     Object.keys(base).forEach(function(v) { if (base[v] > 0) fila(v).base = base[v]; });
     todosServiclub.filter(function(r) { return desdeEtapa2(r) && pasaFiltro(r); }).forEach(function(r) {
+      if (esPromoFull(r)) return;
       var n = Number(r.n) || 0, it = fila(sinMarca(r.vendedor));
       if (esBolsita(r)) it.bols += n * PUNTOS_BOLSITA; else it.serv += n * PUNTOS_SERVICLUB;
     });
@@ -258,9 +265,32 @@ function renderRanking() {
     return;
   }
 
-  // Vistas SORTEO MOTOS y FULL: cerradas, solo lo registrado hasta el 25/11 (las bolsitas no entran).
+  if (vistaActual === 'full') {
+    if (filtroActual === 'rango' && (!rangoDesde || !rangoHasta)) {
+      document.getElementById('ranking-lista').innerHTML = '<div class="loading">Elegi la fecha desde y hasta.</div>';
+      return;
+    }
+    // FULL: BASE = raspaditas de Full del sorteo (1 punto cada una, solo en TOTAL) + 1 punto por promocion vendida desde el 26/11.
+    var fu = {};
+    var filaF = function(v) { if (!fu[v]) fu[v] = { vendedor: v, base: 0, promo: 0, pts: 0 }; return fu[v]; };
+    if (filtroActual === 'total') todosLosDatos.forEach(function(r) {
+      if (r.vendedor === 'FRAUDE' || r.cat !== 'FULL' || !antesEtapa2(r)) return;
+      filaF(ALIAS[r.vendedor] || r.vendedor).base += Number(r.n) || 0;
+    });
+    todosServiclub.filter(function(r) { return esPromoFull(r) && desdeEtapa2(r) && pasaFiltro(r); }).forEach(function(r) {
+      filaF(sinMarca(r.vendedor)).promo += (Number(r.n) || 0) * PUNTOS_PROMO_FULL;
+    });
+    var listaF = Object.keys(fu).map(function(v) { var x = fu[v]; x.pts = x.base + x.promo; return x; }).filter(function(x) { return x.pts > 0; });
+    listaF.sort(function(a, b) { return (b.pts - a.pts) || (b.promo - a.promo) || a.vendedor.localeCompare(b.vendedor); });
+    dibujarLista(listaF, (filtroActual === 'total')
+      ? [['BASE','base','base'],['PROMO','promo','serv'],['PTS','pts','pts']]
+      : [['PROMO','promo','serv'],['PTS','pts','pts']]);
+    return;
+  }
+
+  // Vista SORTEO MOTOS: cerrada, solo lo registrado hasta el 25/11 (las bolsitas no entran).
   var filtrados = todosLosDatos.filter(function(r) { return antesEtapa2(r) && pasaFiltro(r); });
-  var filtradosSv = todosServiclub.filter(function(r) { return antesEtapa2(r) && !esBolsita(r) && pasaFiltro(r); });
+  var filtradosSv = todosServiclub.filter(function(r) { return antesEtapa2(r) && !conMarca(r) && pasaFiltro(r); });
 
   if (filtroActual === 'rango' && (!rangoDesde || !rangoHasta)) {
     document.getElementById('ranking-lista').innerHTML = '<div class="loading">Elegi la fecha desde y hasta.</div>';
@@ -357,7 +387,7 @@ function descargarImagen() {
   var rangoTexto = (document.getElementById('inp-rango-desde').value || '?') + ' a ' + (document.getElementById('inp-rango-hasta').value || '?');
   var subtitulos = {hoy:'Hoy - '+new Date().toLocaleDateString('es-AR', {timeZone: 'America/Argentina/Buenos_Aires'}), semana:'Esta semana', total:'Total', dia:document.getElementById('inp-fecha').value || 'Dia seleccionado', rango:rangoTexto};
   document.getElementById('export-header').style.display = 'block';
-  var nomVis = {equipo:' - Ranking de equipo', playa:' - Sorteo motos (cerrado)', full:' - Full (cerrado)'};
+  var nomVis = {equipo:' - Ranking de equipo', playa:' - Sorteo motos (cerrado)', full:' - Full'};
   document.getElementById('export-subtitulo').textContent = subtitulos[filtroActual] + nomVis[vistaActual];
   var el = document.getElementById('ranking-exportable');
   html2canvas(el, {backgroundColor:'#ffffff', scale:2}).then(function(canvas) {
